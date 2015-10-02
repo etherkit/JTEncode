@@ -70,7 +70,7 @@ During transmit, the proper class method is chosen based on the desired mode, th
       break;
     }
 
-Once the channel symbols have been generate, it is a simple matter of transmitting them in sequence, each of the correct amount of time:
+Once the channel symbols have been generated, it is a simple matter of transmitting them in sequence, each the correct amount of time:
 
     // Now transmit the channel symbols
     for(i = 0; i < symbol_count; i++)

@@ -45,24 +45,27 @@
 // Mode defines
 #define JT9_TONE_SPACING        174           // ~1.74 Hz
 #define JT65_TONE_SPACING       269           // ~2.69 Hz
+#define JT4_TONE_SPACING        437           // ~4.37 Hz
 #define WSPR_TONE_SPACING       146           // ~1.46 Hz
 
-#define JT9_CTC                 9000         // CTC value for JT9-1
-#define JT65_CTC                5812         // CTC value for JT65A
-#define WSPR_CTC                10672        // CTC value for WSPR  
+#define JT9_CTC                 9000          // CTC value for JT9-1
+#define JT65_CTC                5812          // CTC value for JT65A
+#define JT4_CTC                 3578          // CTC value for JT4
+#define WSPR_CTC                10672         // CTC value for WSPR  
 
 #define JT9_DEFAULT_FREQ        14078600UL
 #define JT65_DEFAULT_FREQ       14077500UL
+#define JT4_DEFAULT_FREQ        14077500UL
 #define WSPR_DEFAULT_FREQ       14097100UL
 
-#define DEFAULT_MODE            MODE_JT65
+#define DEFAULT_MODE            MODE_JT4
 
 // Hardware defines
 #define BUTTON                  12
 #define LED_PIN                 13
 
 // Enumerations
-enum mode {MODE_JT9, MODE_JT65, MODE_WSPR};
+enum mode {MODE_JT9, MODE_JT65, MODE_JT4, MODE_WSPR};
 
 // Class instantiation
 Si5351 si5351;
@@ -106,6 +109,9 @@ void encode()
     break;
   case MODE_JT65:
     jtencode.jt65_encode(message, tx_buffer);
+    break;
+  case MODE_JT4:
+    jtencode.jt4_encode(message, tx_buffer);
     break;
   case MODE_WSPR:
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
@@ -157,6 +163,12 @@ void setup()
     symbol_count = JT65_SYMBOL_COUNT; // From the library defines
     tone_spacing = JT65_TONE_SPACING;
     break;
+  case MODE_JT4:
+    freq = JT4_DEFAULT_FREQ;
+    ctc = JT4_CTC;
+    symbol_count = JT4_SYMBOL_COUNT; // From the library defines
+    tone_spacing = JT4_TONE_SPACING;
+    break;
   case MODE_WSPR:
     freq = WSPR_DEFAULT_FREQ;
     ctc = WSPR_CTC;
@@ -168,7 +180,7 @@ void setup()
   // Initialize the Si5351
   // Change the 2nd parameter in init if using a ref osc other
   // than 25 MHz
-  si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0);
+  si5351.init(SI5351_VARIANT_A3, SI5351_CRYSTAL_LOAD_8PF, 0);
 
   // Set CLK0 output
   si5351.set_correction(0);
