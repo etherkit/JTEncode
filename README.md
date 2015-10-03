@@ -1,6 +1,6 @@
-JT65/JT9/WSPR Encoder Library for Arduino
-=========================================
-This library very simply generates a set of channel symbols for JT65, JT9, or WSPR based on the user providing a properly formatted Type 6 message for JT65 or JT9 (which is 13 valid characters) or a callsign, Maidenhead grid locator, and power output for WSPR. When paired with a synthesizer that can output frequencies in fine, phase-continuous tuning steps (such as the Si5351), then a beacon or telemetry transmitter can be created which can change the transmitted characters as needed from the Arduino.
+JT65/JT9/JT4/WSPR Encoder Library for Arduino
+=============================================
+This library very simply generates a set of channel symbols for JT65, JT9, JT4, or WSPR based on the user providing a properly formatted Type 6 message for JT65, JT9, or JT4 (which is 13 valid characters) or a callsign, Maidenhead grid locator, and power output for WSPR. When paired with a synthesizer that can output frequencies in fine, phase-continuous tuning steps (such as the Si5351), then a beacon or telemetry transmitter can be created which can change the transmitted characters as needed from the Arduino.
 
 Please feel free to use the issues feature of GitHub if you run into problems or have suggestions for important features to implement.
 
@@ -16,11 +16,11 @@ Include the JTEncode library into your instance of the Arduino IDE. Download a Z
 
 Example
 -------
-There is a simple example that is placed in your examples menu under JTEncode. Open this to see how to incorporate this library with your code. The example provided with with the library is meant to be used in conjuction with the [Etherkit Si5351A Breakout Board](https://www.etherkit.com/rf-modules/si5351a-breakout-board.html), although it could be modified to use with other synthesizers which meet the technical requirements of the JT65/JT9/WSPR modes.
+There is a simple example that is placed in your examples menu under JTEncode. Open this to see how to incorporate this library with your code. The example provided with with the library is meant to be used in conjuction with the [Etherkit Si5351A Breakout Board](https://www.etherkit.com/rf-modules/si5351a-breakout-board.html), although it could be modified to use with other synthesizers which meet the technical requirements of the JT65/JT9/JT4/WSPR modes.
 
 To run this example, be sure to download the [Si5351Arduino](https://github.com/etherkit/Si5351Arduino) library and follow the instructions there to connect the Si5351A Breakout Board to your Arduino. In order to trigger transmissions, you will also need to connect a momentary pushbutton from pin 12 of the Arduino to ground.
 
-The example sketch itself is fairly straightforward. JT65, JT9, and WSPR modes are modulated in same way: phase-continuous multiple-frequency shift keying (MFSK). The message to be transmitted is passed to the JTEncode method corresponding to the desired mode, along with a pointer to an array which holds the returned channel symbols. When the pushbutton is pushed, the sketch then transmits each channel symbol sequentially as an offset from the base frequency given in the sketch define section.
+The example sketch itself is fairly straightforward. JT65, JT9, JT4, and WSPR modes are modulated in same way: phase-continuous multiple-frequency shift keying (MFSK). The message to be transmitted is passed to the JTEncode method corresponding to the desired mode, along with a pointer to an array which holds the returned channel symbols. When the pushbutton is pushed, the sketch then transmits each channel symbol sequentially as an offset from the base frequency given in the sketch define section.
 
 An instance of the JTEncode object is created:
 
@@ -44,6 +44,12 @@ On sketch startup, the mode parameters are set based on which mode is currently 
       symbol_count = JT65_SYMBOL_COUNT; // From the library defines
       tone_spacing = JT65_TONE_SPACING;
       break;
+    case MODE_JT4:
+      freq = JT4_DEFAULT_FREQ;
+      ctc = JT4_CTC;
+      symbol_count = JT4_SYMBOL_COUNT; // From the library defines
+      tone_spacing = JT4_TONE_SPACING;
+      break;
     case MODE_WSPR:
       freq = WSPR_DEFAULT_FREQ;
       ctc = WSPR_CTC;
@@ -64,6 +70,9 @@ During transmit, the proper class method is chosen based on the desired mode, th
       break;
     case MODE_JT65:
       jtencode.jt65_encode(message, tx_buffer);
+      break;
+    case MODE_JT4:
+      jtencode.jt4_encode(message, tx_buffer);
       break;
     case MODE_WSPR:
       jtencode.wspr_encode(call, loc, dbm, tx_buffer);
@@ -110,6 +119,21 @@ Public Methods
  *
  */
 ```
+
+###jt4_encode()
+```
+/*
+ * jt4_encode(char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message of up to 13 allowable characters and returns
+ * a channel symbol table.
+ *
+ * message - Plaintext Type 6 message.
+ * symbols - Array of channel symbols to transmit retunred by the method.
+ *  Ensure that you pass a uint8_t array of size JT4_SYMBOL_COUNT to the method.
+ *
+ */
+ ```
 
 ###wspr_encode()
 ```
