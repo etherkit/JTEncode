@@ -9,11 +9,11 @@
 // Connect a momentary push button to pin 12 to use as the
 // transmit trigger. Get fancy by adding your own code to trigger
 // off of the time from a GPS or your PC via virtual serial.
-// 
-// Original code based on Feld Hell beacon for Arduino by Mark 
-// Vandewettering K6HX, adapted for the Si5351A by Robert 
+//
+// Original code based on Feld Hell beacon for Arduino by Mark
+// Vandewettering K6HX, adapted for the Si5351A by Robert
 // Liesenfeld AK6L <ak6l@ak6l.org>.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
 // "Software"), to deal in the Software without restriction, including
@@ -21,10 +21,10 @@
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject
 // to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -45,24 +45,27 @@
 // Mode defines
 #define JT9_TONE_SPACING        174           // ~1.74 Hz
 #define JT65_TONE_SPACING       269           // ~2.69 Hz
+#define JT4_TONE_SPACING        437           // ~4.37 Hz
 #define WSPR_TONE_SPACING       146           // ~1.46 Hz
 
-#define JT9_CTC                 9000         // CTC value for JT9-1
-#define JT65_CTC                5812         // CTC value for JT65A
-#define WSPR_CTC                10672        // CTC value for WSPR  
+#define JT9_CTC                 9000          // CTC value for JT9-1
+#define JT65_CTC                5812          // CTC value for JT65A
+#define JT4_CTC                 3578          // CTC value for JT4
+#define WSPR_CTC                10672         // CTC value for WSPR
 
 #define JT9_DEFAULT_FREQ        14078600UL
 #define JT65_DEFAULT_FREQ       14077500UL
+#define JT4_DEFAULT_FREQ        14077500UL
 #define WSPR_DEFAULT_FREQ       14097100UL
 
-#define DEFAULT_MODE            MODE_JT65
+#define DEFAULT_MODE            MODE_JT4
 
 // Hardware defines
 #define BUTTON                  12
 #define LED_PIN                 13
 
 // Enumerations
-enum mode {MODE_JT9, MODE_JT65, MODE_WSPR};
+enum mode {MODE_JT9, MODE_JT65, MODE_JT4, MODE_WSPR};
 
 // Class instantiation
 Si5351 si5351;
@@ -89,15 +92,15 @@ ISR(TIMER1_COMPA_vect)
 {
     proceed = true;
 }
- 
+
 // Loop through the string, transmitting one character at a time.
 void encode()
 {
   uint8_t i;
-  
+
   // Clear out the old transmit buffer
   memset(tx_buffer, 0, 255);
-  
+
   // Set the proper frequency and timer CTC depending on mode
   switch(cur_mode)
   {
@@ -107,15 +110,18 @@ void encode()
   case MODE_JT65:
     jtencode.jt65_encode(message, tx_buffer);
     break;
+  case MODE_JT4:
+    jtencode.jt4_encode(message, tx_buffer);
+    break;
   case MODE_WSPR:
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
     break;
   }
-  
+
   // Reset the tone to the base frequency and turn on the output
   si5351.output_enable(SI5351_CLK0, 1);
   digitalWrite(LED_PIN, HIGH);
-  
+
   // Now transmit the channel symbols
   for(i = 0; i < symbol_count; i++)
   {
@@ -123,13 +129,13 @@ void encode()
       proceed = false;
       while(!proceed);
   }
-      
+
   // Turn off the output
   si5351.output_enable(SI5351_CLK0, 0);
   digitalWrite(LED_PIN, LOW);
 }
 
- 
+
 void setup()
 {
   // Use the Arduino's on-board LED as a keying indicator.
@@ -138,10 +144,10 @@ void setup()
 
   // Use a button connected to pin 12 as a transmit trigger
   pinMode(BUTTON, INPUT_PULLUP);
-  
+
   //Serial.begin(57600);
 
-  // Set the proper frequency, tone spacing, symbol count, and 
+  // Set the proper frequency, tone spacing, symbol count, and
   // timer CTC depending on mode
   switch(cur_mode)
   {
@@ -157,6 +163,12 @@ void setup()
     symbol_count = JT65_SYMBOL_COUNT; // From the library defines
     tone_spacing = JT65_TONE_SPACING;
     break;
+  case MODE_JT4:
+    freq = JT4_DEFAULT_FREQ;
+    ctc = JT4_CTC;
+    symbol_count = JT4_SYMBOL_COUNT; // From the library defines
+    tone_spacing = JT4_TONE_SPACING;
+    break;
   case MODE_WSPR:
     freq = WSPR_DEFAULT_FREQ;
     ctc = WSPR_CTC;
@@ -164,7 +176,7 @@ void setup()
     tone_spacing = WSPR_TONE_SPACING;
     break;
   }
-      
+
   // Initialize the Si5351
   // Change the 2nd parameter in init if using a ref osc other
   // than 25 MHz
@@ -175,7 +187,7 @@ void setup()
   si5351.set_freq(freq * 100, 0, SI5351_CLK0);
   si5351.drive_strength(SI5351_CLK0, SI5351_DRIVE_8MA); // Set for max power if desired
   si5351.output_enable(SI5351_CLK0, 0); // Disable the clock initially
-  
+
   // Set up Timer1 for interrupts every symbol period.
   noInterrupts();          // Turn off interrupts.
   TCCR1A = 0;              // Set entire TCCR1A register to 0; disconnects
@@ -190,7 +202,7 @@ void setup()
   OCR1A = ctc;             // Set up interrupt trigger count;
   interrupts();            // Re-enable interrupts.
 }
- 
+
 void loop()
 {
   // Debounce the button and trigger TX on push
@@ -200,7 +212,7 @@ void loop()
     if (digitalRead(BUTTON) == LOW)
     {
       encode();
-      
+
       delay(50); //delay to avoid extra triggers
     }
   }
