@@ -161,3 +161,11 @@ Defines:
 Acknowledgements
 ----------------
 Many thanks to Joe Taylor K1JT for his innovative work in amateur radio. We are lucky to have him. The algorithms in this program were derived from the source code in the [WSJT](http://sourceforge.net/projects/wsjt/) suite of applications. Also, many thanks for Andy Talbot G4JNT for [his paper](http://www.g4jnt.com/JTModesBcns.htm) on the WSPR coding protocol, which helped me to understand the WSPR encoding process, which in turn helped me to understand the related JT protocols.
+
+License
+-------
+JTEncode is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+JTEncode is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with JTEncode.  If not, see <http://www.gnu.org/licenses/>.
