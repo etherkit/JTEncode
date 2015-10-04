@@ -156,7 +156,7 @@ Here are the defines, structs, and enumerations you will find handy to use with 
 
 Defines:
 
-    JT65_SYMBOL_COUNT, JT9_SYMBOL_COUNT, WSPR_SYMBOL_COUNT
+    JT65_SYMBOL_COUNT, JT9_SYMBOL_COUNT, JT4_SYMBOL_COUNT, WSPR_SYMBOL_COUNT
 
 Acknowledgements
 ----------------
