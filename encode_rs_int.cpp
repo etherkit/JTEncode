@@ -38,8 +38,8 @@ void JTEncode::encode_rs_int(void *p, data_t *data, data_t *parity)
 {
   struct rs *rs = (struct rs *)p;
 
-  #undef A0
-  #define A0 (NN) /* Special reserved value encoding zero in index form */
+  #undef A_0
+  #define A_0 (NN) /* Special reserved value encoding zero in index form */
 
   {
     int i, j;
@@ -49,7 +49,7 @@ void JTEncode::encode_rs_int(void *p, data_t *data, data_t *parity)
 
     for(i=0;i<NN-NROOTS-PAD;i++){
       feedback = INDEX_OF[data[i] ^ parity[0]];
-      if(feedback != A0){      /* feedback term is non-zero */
+      if(feedback != A_0){      /* feedback term is non-zero */
   #ifdef UNNORMALIZED
         /* This line is unnecessary when GENPOLY[NROOTS] is unity, as it must
          * always be for the polynomials constructed by init_rs()
@@ -61,7 +61,7 @@ void JTEncode::encode_rs_int(void *p, data_t *data, data_t *parity)
       }
       /* Shift */
       memmove(&parity[0],&parity[1],sizeof(data_t)*(NROOTS-1));
-      if(feedback != A0)
+      if(feedback != A_0)
         parity[NROOTS-1] = ALPHA_TO[MODNN(feedback + GENPOLY[0])];
       else
         parity[NROOTS-1] = 0;
