@@ -47,7 +47,6 @@ JTEncode::JTEncode(void)
  *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
  *
  */
-
 void JTEncode::jt65_encode(char * message, uint8_t * symbols)
 {
   // Ensure that the message text conforms to standards
@@ -88,7 +87,6 @@ void JTEncode::jt65_encode(char * message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
  *
  */
-
 void JTEncode::jt9_encode(char * message, uint8_t * symbols)
 {
   // Ensure that the message text conforms to standards
@@ -124,6 +122,44 @@ void JTEncode::jt9_encode(char * message, uint8_t * symbols)
 }
 
 /*
+ * jt9_encode(char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message of up to 13 allowable characters and returns
+ * a channel symbol table.
+ *
+ * message - Plaintext Type 6 message.
+ * symbols - Array of channel symbols to transmit retunred by the method.
+ *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
+ *
+ */
+void JTEncode::jt4_encode(char * message, uint8_t * symbols)
+{
+  // Ensure that the message text conforms to standards
+  // --------------------------------------------------
+  jt_message_prep(message);
+
+  // Bit packing
+  // -----------
+  uint8_t c[13];
+  jt9_bit_packing(message, c);
+
+  // Convolutional Encoding
+  // ---------------------
+  uint8_t s[JT4_SYMBOL_COUNT];
+  convolve(c, s, 13, JT4_BIT_COUNT);
+
+  // Interleaving
+  // ------------
+  jt9_interleave(s);
+  memmove(s + 1, s, JT4_BIT_COUNT);
+  s[0] = 0; // Append a 0 bit to start of sequence
+
+  // Merge with sync vector
+  // ----------------------
+  jt4_merge_sync_vector(s, symbols);
+}
+
+/*
  * wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
@@ -135,7 +171,6 @@ void JTEncode::jt9_encode(char * message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size WSPR_SYMBOL_COUNT to the method.
  *
  */
-
 void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
 {
     // Ensure that the message text conforms to standards
@@ -653,6 +688,27 @@ void JTEncode::jt9_merge_sync_vector(uint8_t * g, uint8_t * symbols)
       j++;
     }
   }
+}
+
+void JTEncode::jt4_merge_sync_vector(uint8_t * g, uint8_t * symbols)
+{
+  uint8_t i;
+  const uint8_t sync_vector[JT4_SYMBOL_COUNT] =
+	{0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0,
+   0, 0, 0, 0, 1, 1, 0, 0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,0 ,1 ,1,
+   0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+   1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0,
+   0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0,
+   1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1,
+   1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1,
+   0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1,
+   1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+   0, 1, 1, 1, 1, 0, 1, 0, 1};
+
+	for(i = 0; i < JT4_SYMBOL_COUNT; i++)
+	{
+		symbols[i] = sync_vector[i] + (2 * g[i]);
+	}
 }
 
 void JTEncode::wspr_merge_sync_vector(uint8_t * g, uint8_t * symbols)
