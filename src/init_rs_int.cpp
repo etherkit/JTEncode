@@ -66,8 +66,8 @@ void * JTEncode::init_rs_int(int symsize, int gfpoly, int fcr, int prim,
   }
 
   /* Generate Galois field lookup tables */
-  rs->index_of[0] = A0; /* log(zero) = -inf */
-  rs->alpha_to[A0] = 0; /* alpha**-inf = 0 */
+  rs->index_of[0] = A_0; /* log(zero) = -inf */
+  rs->alpha_to[A_0] = 0; /* alpha**-inf = 0 */
   sr = 1;
   for(i=0;i<rs->nn;i++){
     rs->index_of[sr] = i;

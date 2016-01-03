@@ -28,12 +28,14 @@
 
 #define JT65_SYMBOL_COUNT                   126
 #define JT9_SYMBOL_COUNT                    85
+#define JT4_SYMBOL_COUNT                    207
 #define WSPR_SYMBOL_COUNT                   162
 
 #define JT65_ENCODE_COUNT                   63
 #define JT9_ENCODE_COUNT                    69
 
 #define JT9_BIT_COUNT                       206
+#define JT4_BIT_COUNT                       206
 #define WSPR_BIT_COUNT                      162
 
 class JTEncode
@@ -42,6 +44,7 @@ public:
   JTEncode(void);
   void jt65_encode(char *, uint8_t *);
   void jt9_encode(char *, uint8_t *);
+  void jt4_encode(char *, uint8_t *);
   void wspr_encode(char *, char *, uint8_t, uint8_t *);
 private:
   uint8_t jt_code(char);
@@ -59,6 +62,7 @@ private:
   void jt_gray_code(uint8_t *, uint8_t);
   void jt65_merge_sync_vector(uint8_t *, uint8_t *);
   void jt9_merge_sync_vector(uint8_t *, uint8_t *);
+  void jt4_merge_sync_vector(uint8_t *, uint8_t *);
   void wspr_merge_sync_vector(uint8_t *, uint8_t *);
   void convolve(uint8_t *, uint8_t *, uint8_t, uint8_t);
   void rs_encode(uint8_t *, uint8_t *);
