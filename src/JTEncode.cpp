@@ -512,23 +512,13 @@ void JTEncode::jt65_interleave(uint8_t * s)
 {
   uint8_t i, j;
   uint8_t d[JT65_ENCODE_COUNT];
-  uint8_t d1[7][9];
 
-  // Fill temp d1 array
+  // Interleave
   for(i = 0; i < 9; i++)
   {
     for(j = 0; j < 7; j++)
     {
-      d1[i][j] = s[(i * 7) + j];
-    }
-  }
-
-  // Interleave and translate back to 1D destination array
-  for(i = 0; i < 7; i++)
-  {
-    for(j = 0; j < 9; j++)
-    {
-      d[(i * 9) + j] = d1[j][i];
+      d[(j * 9) + i] = s[(i * 7) + j];
     }
   }
 
