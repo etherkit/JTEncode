@@ -27,6 +27,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+
+// Define an upper bound on the number of glyphs.  Defining it this
+// way allows adding characters without having to update a hard-coded
+// upper bound.
+#define NGLYPHS         (sizeof(fsq_code_table)/sizeof(fsq_code_table[0]))
+
+uint8_t JTEncode::crc8_table[256];
 
 /* Public Class Members */
 
@@ -34,6 +42,9 @@ JTEncode::JTEncode(void)
 {
   // Initialize the Reed-Solomon encoder
   rs_inst = (struct rs *)(intptr_t)init_rs_int(6, 0x43, 3, 1, 51, 0);
+
+  // Initialize the CRC8 table
+  init_crc8();
 }
 
 /*
@@ -173,7 +184,7 @@ void JTEncode::jt4_encode(char * message, uint8_t * symbols)
  */
 void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
 {
-    // Ensure that the message text conforms to standards
+  // Ensure that the message text conforms to standards
   // --------------------------------------------------
   wspr_message_prep(call, loc, dbm);
 
@@ -194,6 +205,181 @@ void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbo
   // Merge with sync vector
   // ----------------------
   wspr_merge_sync_vector(s, symbols);
+}
+
+/*
+ * fsq_dir_encode(char * from_call, char * from_call, char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message and returns a FSQ channel symbol table.
+ *
+ * from_call - Callsign of issuing station
+ * message - Null-terminated message string, no greater than 200 chars in length
+ * symbols - Array of channel symbols to transmit retunred by the method.
+ *  Ensure that you pass a uint8_t array of at least the size of the message
+ *  plus 5 characters to the method. Terminated in 0xFF.
+ *
+ */
+void JTEncode::fsq_encode(char * from_call, char * message, uint8_t * symbols)
+{
+  uint16_t symbol_pos = 0;
+  uint8_t i, fch, vcode1, vcode2, tone;
+  uint8_t cur_tone = 0;
+  char tx_buffer[255];
+  char * tx_message;
+
+  // Clearn the transmit message buffer
+  memset(tx_buffer, 0, 255);
+
+  // Create the message to be transmitted
+  sprintf(tx_buffer, "  \n%s: %s", from_call, message);
+
+  tx_message = tx_buffer;
+
+  // Iterate through the message and encode
+  // --------------------------------------
+  while(*tx_message != '\0')
+  {
+    for(i = 0; i < NGLYPHS; i++)
+    {
+      uint8_t ch = (uint8_t)*tx_message;
+
+      // Check each element of the varicode table to see if we've found the
+      // character we're trying to send.
+      fch = pgm_read_byte(&fsq_code_table[i].ch);
+
+      if(fch == ch)
+      {
+          // Found the character, now fetch the varicode chars
+          vcode1 = pgm_read_byte(&(fsq_code_table[i].var[0]));
+          vcode2 = pgm_read_byte(&(fsq_code_table[i].var[1]));
+
+          // Transmit the appropriate tone per a varicode char
+          if(vcode2 == 0)
+          {
+            // If the 2nd varicode char is a 0 in the table,
+            // we are transmitting a lowercase character, and thus
+            // only transmit one tone for this character.
+
+            // Generate tone
+            cur_tone = ((cur_tone + vcode1 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+          }
+          else
+          {
+            // If the 2nd varicode char is anything other than 0 in
+            // the table, then we need to transmit both
+
+            // Generate 1st tone
+            cur_tone = ((cur_tone + vcode1 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+
+            // Generate 2nd tone
+            cur_tone = ((cur_tone + vcode2 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+          }
+          break; // We've found and transmitted the char,
+             // so exit the for loop
+        }
+    }
+
+    tx_message++;
+  }
+
+  // Message termination
+  // ----------------
+  symbols[symbol_pos] = 0xff;
+}
+
+/*
+ * fsq_dir_encode(char * from_call, char * to_call, char * cmd, char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message and returns a FSQ channel symbol table.
+ *
+ * from_call - Callsign from which message is directed
+ * to_call - Callsign to which message is directed
+ * cmd - Directed command
+ * message - Null-terminated message string, no greater than 200 chars in length
+ * symbols - Array of channel symbols to transmit retunred by the method.
+ *  Ensure that you pass a uint8_t array of at least the size of the message
+ *  plus 5 characters to the method. Terminated in 0xFF.
+ *
+ */
+void JTEncode::fsq_dir_encode(char * from_call, char * to_call, char * cmd, char * message, uint8_t * symbols)
+{
+  uint16_t symbol_pos = 0;
+  uint8_t i, fch, vcode1, vcode2, tone, from_call_crc;
+  uint8_t cur_tone = 0;
+  char tx_buffer[255];
+  char * tx_message;
+
+  // Generate a CRC on from_call
+  // ---------------------------
+  from_call_crc = crc8(from_call);
+
+  // Clearn the transmit message buffer
+  memset(tx_buffer, 0, 255);
+
+  // Create the message to be transmitted
+  // We are building a directed message here.
+  // FSQ very specifically needs "  \b  " in
+  // directed mode to indicate EOT. A single backspace won't do it.
+  sprintf(tx_buffer, "  \n%s:%02x%s%s%s%s", from_call, from_call_crc, to_call, cmd, message, "  \b  ");
+
+  tx_message = tx_buffer;
+
+  // Iterate through the message and encode
+  // --------------------------------------
+  while(*tx_message != '\0')
+  {
+    for(i = 0; i < NGLYPHS; i++)
+    {
+      uint8_t ch = (uint8_t)*tx_message;
+
+      // Check each element of the varicode table to see if we've found the
+      // character we're trying to send.
+      fch = pgm_read_byte(&fsq_code_table[i].ch);
+
+      if(fch == ch)
+      {
+          // Found the character, now fetch the varicode chars
+          vcode1 = pgm_read_byte(&(fsq_code_table[i].var[0]));
+          vcode2 = pgm_read_byte(&(fsq_code_table[i].var[1]));
+
+          // Transmit the appropriate tone per a varicode char
+          if(vcode2 == 0)
+          {
+            // If the 2nd varicode char is a 0 in the table,
+            // we are transmitting a lowercase character, and thus
+            // only transmit one tone for this character.
+
+            // Generate tone
+            cur_tone = ((cur_tone + vcode1 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+          }
+          else
+          {
+            // If the 2nd varicode char is anything other than 0 in
+            // the table, then we need to transmit both
+
+            // Generate 1st tone
+            cur_tone = ((cur_tone + vcode1 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+
+            // Generate 2nd tone
+            cur_tone = ((cur_tone + vcode2 + 1) % 33);
+            symbols[symbol_pos++] = cur_tone;
+          }
+          break; // We've found and transmitted the char,
+             // so exit the for loop
+        }
+    }
+
+    tx_message++;
+  }
+
+  // Message termination
+  // ----------------
+  symbols[symbol_pos] = 0xff;
 }
 
 /* Private Class Members */
@@ -797,4 +983,36 @@ void JTEncode::rs_encode(uint8_t * data, uint8_t * symbols)
   {
     symbols[i + 51] = dat1[11 - i];
   }
+}
+
+void JTEncode::init_crc8(void)
+{
+  int i,j;
+  uint8_t crc;
+
+  for(i = 0; i < 256; i++)
+  {
+    crc = i;
+    for(j = 0; j < 8; j++)
+    {
+      crc = (crc << 1) ^ ((crc & 0x80) ? 0x07 : 0);
+    }
+    crc8_table[i] = crc & 0xFF;
+  }
+}
+
+uint8_t JTEncode::crc8(char * text)
+{
+  uint8_t crc = '\0';
+  uint8_t ch;
+
+  int i;
+  for(i = 0; i < strlen(text); i++)
+  {
+    ch = text[i];
+    crc = crc8_table[(crc) ^ ch];
+    crc &= 0xFF;
+  }
+
+  return crc;
 }

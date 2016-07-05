@@ -47,16 +47,19 @@
 #define JT65_TONE_SPACING       269           // ~2.69 Hz
 #define JT4_TONE_SPACING        437           // ~4.37 Hz
 #define WSPR_TONE_SPACING       146           // ~1.46 Hz
+#define FSQ_TONE_SPACING        174           // ~1.74 Hz
 
 #define JT9_CTC                 9000          // CTC value for JT9-1
 #define JT65_CTC                5812          // CTC value for JT65A
 #define JT4_CTC                 3578          // CTC value for JT4
 #define WSPR_CTC                10672         // CTC value for WSPR
+#define FSQ_2_CTC               7812          // CTC value for 2 baud FSQ
 
 #define JT9_DEFAULT_FREQ        14078600UL
 #define JT65_DEFAULT_FREQ       14077500UL
 #define JT4_DEFAULT_FREQ        14077500UL
 #define WSPR_DEFAULT_FREQ       14097100UL
+#define FSQ_DEFAULT_FREQ        7105350UL;   // Base freq is 1350 Hz higher than dial freq in USB
 
 #define DEFAULT_MODE            MODE_JT4
 
@@ -65,7 +68,8 @@
 #define LED_PIN                 13
 
 // Enumerations
-enum mode {MODE_JT9, MODE_JT65, MODE_JT4, MODE_WSPR};
+enum mode {MODE_JT9, MODE_JT65, MODE_JT4, MODE_WSPR, MODE_FSQ_2, MODE_FSQ_3,
+  MODE_FSQ_4_5, MODE_FSQ_6};
 
 // Class instantiation
 Si5351 si5351;
@@ -116,6 +120,12 @@ void encode()
   case MODE_WSPR:
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
     break;
+  case MODE_FSQ_2:
+  case MODE_FSQ_3:
+  case MODE_FSQ_4_5:
+  case MODE_FSQ_6:
+    jtencode.fsq_encode(call, message, tx_buffer);
+    break;
   }
 
   // Reset the tone to the base frequency and turn on the output
@@ -144,6 +154,9 @@ void setup()
 
   // Use a button connected to pin 12 as a transmit trigger
   pinMode(BUTTON, INPUT_PULLUP);
+
+  // Set the mode to use
+  cur_mode = MODE_FSQ_2;
 
   //Serial.begin(57600);
 
@@ -174,6 +187,11 @@ void setup()
     ctc = WSPR_CTC;
     symbol_count = WSPR_SYMBOL_COUNT; // From the library defines
     tone_spacing = WSPR_TONE_SPACING;
+    break;
+  case MODE_FSQ_2:
+    freq = FSQ_DEFAULT_FREQ;
+    ctc = FSQ_2_CTC;
+    tone_spacing = FSQ_TONE_SPACING;
     break;
   }
 
