@@ -1,5 +1,5 @@
 //
-// Simple JT65/JT9/WSPR beacon for Arduino, with the Etherkit
+// Simple JT65/JT9/WSPR/FSQ beacon for Arduino, with the Etherkit
 // Si5351A Breakout Board, by Jason Milldrum NT7S.
 //
 // Transmit an abritrary message of up to 13 valid characters
@@ -47,21 +47,24 @@
 #define JT65_TONE_SPACING       269           // ~2.69 Hz
 #define JT4_TONE_SPACING        437           // ~4.37 Hz
 #define WSPR_TONE_SPACING       146           // ~1.46 Hz
-#define FSQ_TONE_SPACING        174           // ~1.74 Hz
+#define FSQ_TONE_SPACING        879           // ~1.74 Hz
 
 #define JT9_CTC                 9000          // CTC value for JT9-1
 #define JT65_CTC                5812          // CTC value for JT65A
-#define JT4_CTC                 3578          // CTC value for JT4
+#define JT4_CTC                 3578          // CTC value for JT4A
 #define WSPR_CTC                10672         // CTC value for WSPR
 #define FSQ_2_CTC               7812          // CTC value for 2 baud FSQ
+#define FSQ_3_CTC               5208          // CTC value for 3 baud FSQ
+#define FSQ_4_5_CTC             3472          // CTC value for 4.5 baud FSQ
+#define FSQ_6_CTC               2604          // CTC value for 6 baud FSQ
 
-#define JT9_DEFAULT_FREQ        14078600UL
-#define JT65_DEFAULT_FREQ       14077500UL
-#define JT4_DEFAULT_FREQ        14077500UL
-#define WSPR_DEFAULT_FREQ       14097100UL
-#define FSQ_DEFAULT_FREQ        7105350UL;   // Base freq is 1350 Hz higher than dial freq in USB
+#define JT9_DEFAULT_FREQ        14080800UL
+#define JT65_DEFAULT_FREQ       14078500UL
+#define JT4_DEFAULT_FREQ        14078500UL
+#define WSPR_DEFAULT_FREQ       14097200UL
+#define FSQ_DEFAULT_FREQ        7105350UL     // Base freq is 1350 Hz higher than dial freq in USB
 
-#define DEFAULT_MODE            MODE_JT4
+#define DEFAULT_MODE            MODE_JT65
 
 // Hardware defines
 #define BUTTON                  12
@@ -77,8 +80,8 @@ JTEncode jtencode;
 
 // Global variables
 unsigned long freq;
-char message[14] = "N0CALL AA00";
-char call[7] = "N0CALL";
+String message = "N0CALL AA00";
+String call = "N0CALL";
 char loc[5] = "AA00";
 uint8_t dbm = 27;
 uint8_t tx_buffer[255];
@@ -118,13 +121,15 @@ void encode()
     jtencode.jt4_encode(message, tx_buffer);
     break;
   case MODE_WSPR:
+    call.toUpperCase();
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
     break;
   case MODE_FSQ_2:
   case MODE_FSQ_3:
   case MODE_FSQ_4_5:
   case MODE_FSQ_6:
-    jtencode.fsq_encode(call, message, tx_buffer);
+    call.toLowerCase();
+    jtencode.fsq_dir_encode(call, "n0call", " ", "hello world", tx_buffer);
     break;
   }
 
@@ -133,6 +138,17 @@ void encode()
   digitalWrite(LED_PIN, HIGH);
 
   // Now transmit the channel symbols
+  if(cur_mode == MODE_FSQ_2 || cur_mode == MODE_FSQ_3 || cur_mode == MODE_FSQ_4_5 || cur_mode == MODE_FSQ_6)
+  {
+    uint8_t j = 0;
+
+    while(tx_buffer[j++] != 0xff)
+    {
+    }
+
+    symbol_count = j - 1;
+  }
+
   for(i = 0; i < symbol_count; i++)
   {
       si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), 0, SI5351_CLK0);
@@ -156,9 +172,7 @@ void setup()
   pinMode(BUTTON, INPUT_PULLUP);
 
   // Set the mode to use
-  cur_mode = MODE_FSQ_2;
-
-  //Serial.begin(57600);
+  cur_mode = MODE_WSPR;
 
   // Set the proper frequency, tone spacing, symbol count, and
   // timer CTC depending on mode
@@ -191,6 +205,21 @@ void setup()
   case MODE_FSQ_2:
     freq = FSQ_DEFAULT_FREQ;
     ctc = FSQ_2_CTC;
+    tone_spacing = FSQ_TONE_SPACING;
+    break;
+  case MODE_FSQ_3:
+    freq = FSQ_DEFAULT_FREQ;
+    ctc = FSQ_3_CTC;
+    tone_spacing = FSQ_TONE_SPACING;
+    break;
+  case MODE_FSQ_4_5:
+    freq = FSQ_DEFAULT_FREQ;
+    ctc = FSQ_4_5_CTC;
+    tone_spacing = FSQ_TONE_SPACING;
+    break;
+  case MODE_FSQ_6:
+    freq = FSQ_DEFAULT_FREQ;
+    ctc = FSQ_6_CTC;
     tone_spacing = FSQ_TONE_SPACING;
     break;
   }

@@ -2,7 +2,10 @@ JTEncode KEYWORD1
 
 jt65_encode KEYWORD2
 jt9_encode KEYWORD2
+jt4_encode KEYWORD2
 wspr_encode KEYWORD2
+fsq_encode KEYWORD2
+fsq_dir_encode KEYWORD2
 
 JT65_SYMBOL_COUNT LITERAL1
 JT9_SYMBOL_COUNT LITERAL1
