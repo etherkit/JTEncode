@@ -82,7 +82,7 @@ JTEncode jtencode;
 unsigned long freq;
 String message = "N0CALL AA00";
 String call = "N0CALL";
-char loc[5] = "AA00";
+String loc = "AA00";
 uint8_t dbm = 27;
 uint8_t tx_buffer[255];
 enum mode cur_mode = DEFAULT_MODE;
