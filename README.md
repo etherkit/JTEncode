@@ -195,22 +195,22 @@ Public Methods
  */
 ```
 
- ### fsq_dir_encode()
+### fsq_dir_encode()
  ```
- /*
-  * fsq_dir_encode(String from_call, String to_call, String cmd, String message, uint8_t * symbols)
-  *
-  * Takes an arbitrary message and returns a FSQ channel symbol table.
-  *
-  * from_call - Callsign from which message is directed (maximum size: 20)
-  * to_call - Callsign to which message is directed (maximum size: 20)
-  * cmd - Directed command (maximum size: 20)
-  * message - Null-terminated message string, no greater than 200 chars in length
-  * symbols - Array of channel symbols to transmit retunred by the method.
-  *  Ensure that you pass a uint8_t array of at least the size of the message
-  *  plus 5 characters to the method. Terminated in 0xFF.
-  *
-  */
+/*
+* fsq_dir_encode(String from_call, String to_call, String cmd, String message, uint8_t * symbols)
+*
+* Takes an arbitrary message and returns a FSQ channel symbol table.
+*
+* from_call - Callsign from which message is directed (maximum size: 20)
+* to_call - Callsign to which message is directed (maximum size: 20)
+* cmd - Directed command (maximum size: 20)
+* message - Null-terminated message string, no greater than 200 chars in length
+* symbols - Array of channel symbols to transmit retunred by the method.
+*  Ensure that you pass a uint8_t array of at least the size of the message
+*  plus 5 characters to the method. Terminated in 0xFF.
+*
+*/
 ```
 
 Tokens
