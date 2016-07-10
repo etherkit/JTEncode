@@ -187,7 +187,7 @@ Public Methods
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
  * from_call - Callsign of issuing station (maximum size: 20)
- * message - Null-terminated message string, no greater than 200 chars in length
+ * message - Null-terminated message string, no greater than 130 chars in length
  * symbols - Array of channel symbols to transmit retunred by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
@@ -204,8 +204,8 @@ Public Methods
 *
 * from_call - Callsign from which message is directed (maximum size: 20)
 * to_call - Callsign to which message is directed (maximum size: 20)
-* cmd - Directed command (maximum size: 20)
-* message - Null-terminated message string, no greater than 200 chars in length
+* cmd - Directed command (maximum size: 10)
+* message - Null-terminated message string, no greater than 100 chars in length
 * symbols - Array of channel symbols to transmit retunred by the method.
 *  Ensure that you pass a uint8_t array of at least the size of the message
 *  plus 5 characters to the method. Terminated in 0xFF.

@@ -238,7 +238,7 @@ void JTEncode::wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbo
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
  * from_call - Callsign of issuing station (maximum size: 20)
- * message - Null-terminated message string, no greater than 200 chars in length
+ * message - Null-terminated message string, no greater than 130 chars in length
  * symbols - Array of channel symbols to transmit retunred by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
@@ -246,11 +246,15 @@ void JTEncode::wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbo
  */
 void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
 {
-  char tx_buffer[255];
+  char tx_buffer[155];
   char * tx_message;
   uint16_t symbol_pos = 0;
   uint8_t i, fch, vcode1, vcode2, tone;
   uint8_t cur_tone = 0;
+
+  // Clear out the transmit buffer
+  // -----------------------------
+  memset(tx_buffer, 0, 155);
 
   // Create the message to be transmitted
   // ------------------------------------
@@ -314,26 +318,22 @@ void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
 }
 
 /*
- * fsq_dir_encode(String from_call, String to_call, String cmd, String message, uint8_t * symbols)
+ * fsq_dir_encode(String from_call, String to_call, char cmd, String message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
  * from_call - Callsign from which message is directed (maximum size: 20)
  * to_call - Callsign to which message is directed (maximum size: 20)
- * cmd - Directed command (maximum size: 20)
- * message - Null-terminated message string, no greater than 200 chars in length
+ * cmd - Directed command
+ * message - Null-terminated message string, no greater than 100 chars in length
  * symbols - Array of channel symbols to transmit retunred by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
  */
-void JTEncode::fsq_dir_encode(String from_call, String to_call, String cmd, String message, uint8_t * symbols)
+void JTEncode::fsq_dir_encode(String from_call, String to_call, char cmd, String message, uint8_t * symbols)
 {
-  //char from_call_array[20];
-  //char to_call_array[20];
-  //char cmd_array[20];
-  //char message_array[200];
-  char tx_buffer[255];
+  char tx_buffer[155];
   char * tx_message;
   uint16_t symbol_pos = 0;
   uint8_t i, fch, vcode1, vcode2, tone, from_call_crc;
@@ -343,11 +343,15 @@ void JTEncode::fsq_dir_encode(String from_call, String to_call, String cmd, Stri
   // ---------------------------
   from_call_crc = crc8(from_call.c_str());
 
+  // Clear out the transmit buffer
+  // -----------------------------
+  memset(tx_buffer, 0, 155);
+
   // Create the message to be transmitted
   // We are building a directed message here.
   // FSQ very specifically needs "  \b  " in
   // directed mode to indicate EOT. A single backspace won't do it.
-  sprintf(tx_buffer, "  \n%s:%02x%s%s%s%s", from_call.c_str(), from_call_crc, to_call.c_str(), cmd.c_str(), message.c_str(), "  \b  ");
+  sprintf(tx_buffer, "  \n%s:%02x%s%c%s%s", from_call.c_str(), from_call_crc, to_call.c_str(), cmd, message.c_str(), "  \b  ");
 
   tx_message = tx_buffer;
 

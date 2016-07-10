@@ -194,7 +194,7 @@ public:
   void jt4_encode(String, uint8_t *);
   void wspr_encode(String, String, uint8_t, uint8_t *);
   void fsq_encode(String, String, uint8_t *);
-  void fsq_dir_encode(String, String, String, String, uint8_t *);
+  void fsq_dir_encode(String, String, char, String, uint8_t *);
 private:
   uint8_t jt_code(char);
   uint8_t wspr_code(char);
