@@ -36,8 +36,6 @@
 // upper bound.
 #define NGLYPHS         (sizeof(fsq_code_table)/sizeof(fsq_code_table[0]))
 
-//uint8_t JTEncode::crc8_table[256];
-
 /* Public Class Members */
 
 JTEncode::JTEncode(void)
@@ -47,7 +45,7 @@ JTEncode::JTEncode(void)
 }
 
 /*
- * jt65_encode(String message, uint8_t * symbols)
+ * jt65_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -57,22 +55,16 @@ JTEncode::JTEncode(void)
  *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt65_encode(String message, uint8_t * symbols)
+void JTEncode::jt65_encode(char * message, uint8_t * symbols)
 {
-  char message_array[14];
-
-  // Convert the String to C-style char array
-  // ----------------------------------------
-  message.toCharArray(message_array, 14);
-
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
-  jt_message_prep(message_array);
+  jt_message_prep(message);
 
   // Bit packing
   // -----------
   uint8_t c[12];
-  jt65_bit_packing(message_array, c);
+  jt65_bit_packing(message, c);
 
   // Reed-Solomon encoding
   // ---------------------
@@ -93,7 +85,7 @@ void JTEncode::jt65_encode(String message, uint8_t * symbols)
 }
 
 /*
- * jt9_encode(String message, uint8_t * symbols)
+ * jt9_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -103,22 +95,16 @@ void JTEncode::jt65_encode(String message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt9_encode(String message, uint8_t * symbols)
+void JTEncode::jt9_encode(char * message, uint8_t * symbols)
 {
-  char message_array[14];
-
-  // Convert the String to C-style char array
-  // ----------------------------------------
-  message.toCharArray(message_array, 14);
-
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
-  jt_message_prep(message_array);
+  jt_message_prep(message);
 
   // Bit packing
   // -----------
   uint8_t c[13];
-  jt9_bit_packing(message_array, c);
+  jt9_bit_packing(message, c);
 
   // Convolutional Encoding
   // ---------------------
@@ -144,7 +130,7 @@ void JTEncode::jt9_encode(String message, uint8_t * symbols)
 }
 
 /*
- * jt4_encode(String message, uint8_t * symbols)
+ * jt4_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -154,22 +140,16 @@ void JTEncode::jt9_encode(String message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt4_encode(String message, uint8_t * symbols)
+void JTEncode::jt4_encode(char * message, uint8_t * symbols)
 {
-  char message_array[14];
-
-  // Convert the String to C-style char array
-  // ----------------------------------------
-  message.toCharArray(message_array, 14);
-
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
-  jt_message_prep(message_array);
+  jt_message_prep(message);
 
   // Bit packing
   // -----------
   uint8_t c[13];
-  jt9_bit_packing(message_array, c);
+  jt9_bit_packing(message, c);
 
   // Convolutional Encoding
   // ---------------------
@@ -188,7 +168,7 @@ void JTEncode::jt4_encode(String message, uint8_t * symbols)
 }
 
 /*
- * wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbols)
+ * wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
@@ -199,19 +179,11 @@ void JTEncode::jt4_encode(String message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size WSPR_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbols)
+void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
 {
-  char call_array[8];
-  char loc_array[8];
-
-  // Convert the String to C-style char array
-  // ----------------------------------------
-  call.toCharArray(call_array, 8);
-  loc.toCharArray(loc_array, 8);
-
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
-  wspr_message_prep(call_array, loc_array, dbm);
+  wspr_message_prep(call, loc, dbm);
 
   // Bit packing
   // -----------
@@ -233,7 +205,7 @@ void JTEncode::wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbo
 }
 
 /*
- * fsq_encode(String from_call, String message, uint8_t * symbols)
+ * fsq_encode(cahr * from_call, char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -244,7 +216,7 @@ void JTEncode::wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbo
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
  */
-void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
+void JTEncode::fsq_encode(char * from_call, char * message, uint8_t * symbols)
 {
   char tx_buffer[155];
   char * tx_message;
@@ -258,7 +230,7 @@ void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
 
   // Create the message to be transmitted
   // ------------------------------------
-  sprintf(tx_buffer, "  \n%s: %s", from_call.c_str(), message.c_str());
+  sprintf(tx_buffer, "  \n%s: %s", from_call, message);
 
   tx_message = tx_buffer;
 
@@ -318,7 +290,7 @@ void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
 }
 
 /*
- * fsq_dir_encode(String from_call, String to_call, char cmd, String message, uint8_t * symbols)
+ * fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -331,7 +303,7 @@ void JTEncode::fsq_encode(String from_call, String message, uint8_t * symbols)
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
  */
-void JTEncode::fsq_dir_encode(String from_call, String to_call, char cmd, String message, uint8_t * symbols)
+void JTEncode::fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
 {
   char tx_buffer[155];
   char * tx_message;
@@ -341,7 +313,7 @@ void JTEncode::fsq_dir_encode(String from_call, String to_call, char cmd, String
 
   // Generate a CRC on from_call
   // ---------------------------
-  from_call_crc = crc8(from_call.c_str());
+  from_call_crc = crc8(from_call);
 
   // Clear out the transmit buffer
   // -----------------------------
@@ -351,7 +323,7 @@ void JTEncode::fsq_dir_encode(String from_call, String to_call, char cmd, String
   // We are building a directed message here.
   // FSQ very specifically needs "  \b  " in
   // directed mode to indicate EOT. A single backspace won't do it.
-  sprintf(tx_buffer, "  \n%s:%02x%s%c%s%s", from_call.c_str(), from_call_crc, to_call.c_str(), cmd, message.c_str(), "  \b  ");
+  sprintf(tx_buffer, "  \n%s:%02x%s%c%s%s", from_call, from_call_crc, to_call, cmd, message, "  \b  ");
 
   tx_message = tx_buffer;
 

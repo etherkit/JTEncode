@@ -80,9 +80,9 @@ JTEncode jtencode;
 
 // Global variables
 unsigned long freq;
-String message = "N0CALL AA00";
-String call = "N0CALL";
-String loc = "AA00";
+char message[] = "N0CALL AA00";
+char call[] = "N0CALL";
+char loc[] = "AA00";
 uint8_t dbm = 27;
 uint8_t tx_buffer[255];
 enum mode cur_mode = DEFAULT_MODE;
@@ -121,15 +121,13 @@ void encode()
     jtencode.jt4_encode(message, tx_buffer);
     break;
   case MODE_WSPR:
-    call.toUpperCase();
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
     break;
   case MODE_FSQ_2:
   case MODE_FSQ_3:
   case MODE_FSQ_4_5:
   case MODE_FSQ_6:
-    call.toLowerCase();
-    jtencode.fsq_dir_encode(call, "n0call", " ", "hello world", tx_buffer);
+    jtencode.fsq_dir_encode(call, "n0call", ' ', "hello world", tx_buffer);
     break;
   }
 
@@ -231,7 +229,6 @@ void setup()
 
   // Set CLK0 output
   si5351.set_correction(0);
-  si5351.set_freq(freq * 100, 0, SI5351_CLK0);
   si5351.drive_strength(SI5351_CLK0, SI5351_DRIVE_8MA); // Set for max power if desired
   si5351.output_enable(SI5351_CLK0, 0); // Disable the clock initially
 

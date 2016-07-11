@@ -122,7 +122,7 @@ Public Methods
 ### jt65_encode()
 ```
 /*
- * jt65_encode(String message, uint8_t * symbols)
+ * jt65_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -136,7 +136,7 @@ Public Methods
 ### jt9_encode()
 ```
 /*
- * jt9_encode(String message, uint8_t * symbols)
+ * jt9_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -151,7 +151,7 @@ Public Methods
 ### jt4_encode()
 ```
 /*
- * jt4_encode(String message, uint8_t * symbols)
+ * jt4_encode(char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -166,7 +166,7 @@ Public Methods
 ### wspr_encode()
 ```
 /*
- * wspr_encode(String call, String loc, uint8_t dbm, uint8_t * symbols)
+ * wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
@@ -182,7 +182,7 @@ Public Methods
 ### fsq_encode()
 ```
 /*
- * fsq_encode(String from_call, String message, uint8_t * symbols)
+ * fsq_encode(char * from_call, char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -198,13 +198,13 @@ Public Methods
 ### fsq_dir_encode()
  ```
 /*
-* fsq_dir_encode(String from_call, String to_call, String cmd, String message, uint8_t * symbols)
+* fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
 *
 * Takes an arbitrary message and returns a FSQ channel symbol table.
 *
 * from_call - Callsign from which message is directed (maximum size: 20)
 * to_call - Callsign to which message is directed (maximum size: 20)
-* cmd - Directed command (maximum size: 10)
+* cmd - Directed command
 * message - Null-terminated message string, no greater than 100 chars in length
 * symbols - Array of channel symbols to transmit retunred by the method.
 *  Ensure that you pass a uint8_t array of at least the size of the message
@@ -231,7 +231,7 @@ Changelog
 ---------
 * v1.1.0
 
-    Added FSQ, changed all public methods to take String instead of char *
+    Added FSQ
 
 * v1.0.1
 
