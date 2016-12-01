@@ -229,17 +229,21 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.1.1
+
+    * Update example sketch for Si5351Arduino v2.0.0
+
 * v1.1.0
 
-    Added FSQ
+    * Added FSQ.
 
 * v1.0.1
 
-    Fixed a bug in jt65_interleave that was causing a buffer overrun.
+    * Fixed a bug in jt65_interleave that was causing a buffer overrun.
 
 * v1.0.0
 
-    Initial Release
+    * Initial Release.
 
 License
 -------

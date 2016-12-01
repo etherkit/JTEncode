@@ -149,7 +149,7 @@ void encode()
 
   for(i = 0; i < symbol_count; i++)
   {
-      si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), 0, SI5351_CLK0);
+      si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), SI5351_CLK0);
       proceed = false;
       while(!proceed);
   }
@@ -225,10 +225,9 @@ void setup()
   // Initialize the Si5351
   // Change the 2nd parameter in init if using a ref osc other
   // than 25 MHz
-  si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0);
+  si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, 0);
 
   // Set CLK0 output
-  si5351.set_correction(0);
   si5351.drive_strength(SI5351_CLK0, SI5351_DRIVE_8MA); // Set for max power if desired
   si5351.output_enable(SI5351_CLK0, 0); // Disable the clock initially
 
