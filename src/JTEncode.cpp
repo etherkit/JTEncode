@@ -45,7 +45,7 @@ JTEncode::JTEncode(void)
 }
 
 /*
- * jt65_encode(char * message, uint8_t * symbols)
+ * jt65_encode(char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -55,8 +55,12 @@ JTEncode::JTEncode(void)
  *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt65_encode(char * message, uint8_t * symbols)
+void JTEncode::jt65_encode(char * msg, uint8_t * symbols)
 {
+  char message[14];
+  memset(message, 0, 14);
+  strcpy(message, msg);
+
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
   jt_message_prep(message);
@@ -85,7 +89,7 @@ void JTEncode::jt65_encode(char * message, uint8_t * symbols)
 }
 
 /*
- * jt9_encode(char * message, uint8_t * symbols)
+ * jt9_encode(char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -95,8 +99,12 @@ void JTEncode::jt65_encode(char * message, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt9_encode(char * message, uint8_t * symbols)
+void JTEncode::jt9_encode(char * msg, uint8_t * symbols)
 {
+  char message[14];
+  memset(message, 0, 14);
+  strcpy(message, msg);
+
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
   jt_message_prep(message);
@@ -130,18 +138,22 @@ void JTEncode::jt9_encode(char * message, uint8_t * symbols)
 }
 
 /*
- * jt4_encode(char * message, uint8_t * symbols)
+ * jt4_encode(char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
  * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
+ *  Ensure that you pass a uint8_t array of size JT4_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt4_encode(char * message, uint8_t * symbols)
+void JTEncode::jt4_encode(char * msg, uint8_t * symbols)
 {
+  char message[14];
+  memset(message, 0, 14);
+  strcpy(message, msg);
+
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
   jt_message_prep(message);
@@ -457,7 +469,17 @@ uint8_t JTEncode::gray_code(uint8_t c)
 
 void JTEncode::jt_message_prep(char * message)
 {
-  uint8_t i, j;
+  uint8_t i;
+
+  // Pad the message with trailing spaces
+  uint8_t len = strlen(message);
+  if(len < 13)
+  {
+    for(i = len; i <= 13; i++)
+    {
+      message[i] = ' ';
+    }
+  }
 
   // Convert all chars to uppercase
   for(i = 0; i < 13; i++)
@@ -465,16 +487,6 @@ void JTEncode::jt_message_prep(char * message)
     if(islower(message[i]))
     {
       message[i] = toupper(message[i]);
-    }
-  }
-
-  // Pad the message with trailing spaces
-  uint8_t len = strlen(message);
-  if(len < 13)
-  {
-    for(i = len; i < 13; i++)
-    {
-      message[i] = ' ';
     }
   }
 }

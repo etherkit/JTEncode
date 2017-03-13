@@ -229,6 +229,14 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.1.2
+
+    Fix buffer bug in jt_message_prep() that caused messages of 11 chars to lock up the processor
+
+* v1.1.1
+
+    Update example sketch for Si5351Arduino v2.0.0
+
 * v1.1.0
 
     Added FSQ
