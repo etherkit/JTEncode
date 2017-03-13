@@ -231,7 +231,7 @@ Changelog
 ---------
 * v1.1.2
 
-    Fix buffer bug in jt_message_prep() that caused messages of 11 chars to lock up the processor
+    Fix buffer bug in _jt_message_prep()_ that caused messages of 11 chars to lock up the processor
 
 * v1.1.1
 
@@ -243,7 +243,7 @@ Changelog
 
 * v1.0.1
 
-    Fixed a bug in jt65_interleave that was causing a buffer overrun.
+    Fixed a bug in _jt65_interleave()_ that was causing a buffer overrun.
 
 * v1.0.0
 
