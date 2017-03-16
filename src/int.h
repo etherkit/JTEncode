@@ -6,7 +6,10 @@
 #ifndef INT_H_
 #define INT_H_
 
-typedef unsigned int data_t;
+#include <stdint.h>
+
+typedef uint8_t data_t;
+//typedef unsigned int data_t;
 
 #define MODNN(x)		modnn(rs,x)
 #define MM					(rs->mm)
