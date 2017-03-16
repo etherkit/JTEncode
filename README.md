@@ -6,7 +6,7 @@ Please feel free to use the issues feature of GitHub if you run into problems or
 
 Hardware Requirements and Setup
 -------------------------------
-This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno and an Uno clone. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage.
+This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno and an Uno clone. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
 
 How To Install
 --------------
@@ -14,9 +14,13 @@ The best way to install the library is via the Arduino Library Manager, which is
 
 If you need to or would like to install the library in the old way, then you can download a copy of the library in a ZIP file. Download a ZIP file of the library from the GitHub repository by going to [this page](https://github.com/etherkit/JTEncode/releases) and clicking the "Source code (zip)" link under the latest release. Finally, open the Arduino IDE, select menu Sketch > Import Library... > Add Library..., and select the ZIP that you just downloaded.
 
+RAM Usage
+---------
+Most of the encoding functions need to manipulate multiple arrays of symbols in RAM at the same time, and therefore are quite RAM intensive. Care has been taken to put as much data into program memory as is possible, but the encoding functions still can cause problems with the low RAM microcontrollers such as the ATmegaxx8 series. If you are using these, then please be sure to call them only once when a transmit buffer needs to be created or changed, and call them separately of other subroutine calls. When using other microcontrollers that have more RAM, such as most of the ARM ICs, this won't be as much of a problem. If you see unusual freezes, that almost certainly indicates a RAM shortage.
+
 Example
 -------
-There is a simple example that is placed in your examples menu under JTEncode. Open this to see how to incorporate this library with your code. The example provided with with the library is meant to be used in conjuction with the [Etherkit Si5351A Breakout Board](https://www.etherkit.com/rf-modules/si5351a-breakout-board.html), although it could be modified to use with other synthesizers which meet the technical requirements of the JT65/JT9/JT4/WSPR/FSQ modes.
+There is a simple example that is placed in your examples menu under JTEncode. Open this to see how to incorporate this library with your code. The example provided with with the library is meant to be used in conjunction with the [Etherkit Si5351A Breakout Board](https://www.etherkit.com/rf-modules/si5351a-breakout-board.html), although it could be modified to use with other synthesizers which meet the technical requirements of the JT65/JT9/JT4/WSPR/FSQ modes.
 
 To run this example, be sure to download the [Si5351Arduino](https://github.com/etherkit/Si5351Arduino) library and follow the instructions there to connect the Si5351A Breakout Board to your Arduino. In order to trigger transmissions, you will also need to connect a momentary pushbutton from pin 12 of the Arduino to ground.
 
@@ -29,58 +33,58 @@ An instance of the JTEncode object is created:
 On sketch startup, the mode parameters are set based on which mode is currently selected (by the DEFAULT_MODE define):
 
     // Set the proper frequency, tone spacing, symbol count, and
-    // timer CTC depending on mode
+    // tone delay depending on mode
     switch(cur_mode)
     {
     case MODE_JT9:
       freq = JT9_DEFAULT_FREQ;
-      ctc = JT9_CTC;
       symbol_count = JT9_SYMBOL_COUNT; // From the library defines
       tone_spacing = JT9_TONE_SPACING;
+      tone_delay = JT9_DELAY;
       break;
     case MODE_JT65:
       freq = JT65_DEFAULT_FREQ;
-      ctc = JT65_CTC;
       symbol_count = JT65_SYMBOL_COUNT; // From the library defines
       tone_spacing = JT65_TONE_SPACING;
+      tone_delay = JT65_DELAY;
       break;
     case MODE_JT4:
       freq = JT4_DEFAULT_FREQ;
-      ctc = JT4_CTC;
       symbol_count = JT4_SYMBOL_COUNT; // From the library defines
       tone_spacing = JT4_TONE_SPACING;
+      tone_delay = JT4_DELAY;
       break;
     case MODE_WSPR:
       freq = WSPR_DEFAULT_FREQ;
-      ctc = WSPR_CTC;
       symbol_count = WSPR_SYMBOL_COUNT; // From the library defines
       tone_spacing = WSPR_TONE_SPACING;
+      tone_delay = WSPR_DELAY;
       break;
     case MODE_FSQ_2:
       freq = FSQ_DEFAULT_FREQ;
-      ctc = FSQ_2_CTC;
       tone_spacing = FSQ_TONE_SPACING;
+      tone_delay = FSQ_2_DELAY;
       break;
     case MODE_FSQ_3:
       freq = FSQ_DEFAULT_FREQ;
-      ctc = FSQ_3_CTC;
       tone_spacing = FSQ_TONE_SPACING;
+      tone_delay = FSQ_3_DELAY;
       break;
     case MODE_FSQ_4_5:
       freq = FSQ_DEFAULT_FREQ;
-      ctc = FSQ_4_5_CTC;
       tone_spacing = FSQ_TONE_SPACING;
+      tone_delay = FSQ_4_5_DELAY;
       break;
     case MODE_FSQ_6:
       freq = FSQ_DEFAULT_FREQ;
-      ctc = FSQ_6_CTC;
       tone_spacing = FSQ_TONE_SPACING;
+      tone_delay = FSQ_6_DELAY;
       break;
     }
 
 Note that the number of channel symbols for each mode is defined in the library, so you can use those defines to initialize your own symbol array sizes.
 
-During transmit, the proper class method is chosen based on the desired mode, then the transmit symbol buffer and the other mode information is set:
+Before transmit, the proper class method is chosen based on the desired mode, then the transmit symbol buffer and the other mode information is set:
 
     // Set the proper frequency and timer CTC depending on mode
     switch(cur_mode)
@@ -95,17 +99,17 @@ During transmit, the proper class method is chosen based on the desired mode, th
       jtencode.jt4_encode(message, tx_buffer);
       break;
     case MODE_WSPR:
-      call.toUpperCase();
       jtencode.wspr_encode(call, loc, dbm, tx_buffer);
       break;
     case MODE_FSQ_2:
     case MODE_FSQ_3:
     case MODE_FSQ_4_5:
     case MODE_FSQ_6:
-      call.toLowerCase();
       jtencode.fsq_dir_encode(call, "n0call", " ", "hello world", tx_buffer);
       break;
     }
+
+As mentioned above, it is best if the message encoding functions are called only when needed, in its own subroutine.
 
 Once the channel symbols have been generated, it is a simple matter of transmitting them in sequence, each the correct amount of time:
 
@@ -113,8 +117,7 @@ Once the channel symbols have been generated, it is a simple matter of transmitt
     for(i = 0; i < symbol_count; i++)
     {
         si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), 0, SI5351_CLK0);
-        proceed = false;
-        while(!proceed);
+        delay(tone_delay);
     }
 
 Public Methods
@@ -122,7 +125,7 @@ Public Methods
 ### jt65_encode()
 ```
 /*
- * jt65_encode(char * message, uint8_t * symbols)
+ * jt65_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -136,7 +139,7 @@ Public Methods
 ### jt9_encode()
 ```
 /*
- * jt9_encode(char * message, uint8_t * symbols)
+ * jt9_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -151,7 +154,7 @@ Public Methods
 ### jt4_encode()
 ```
 /*
- * jt4_encode(char * message, uint8_t * symbols)
+ * jt4_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -166,7 +169,7 @@ Public Methods
 ### wspr_encode()
 ```
 /*
- * wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
+ * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
@@ -182,7 +185,7 @@ Public Methods
 ### fsq_encode()
 ```
 /*
- * fsq_encode(char * from_call, char * message, uint8_t * symbols)
+ * fsq_encode(const char * from_call, const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -198,7 +201,7 @@ Public Methods
 ### fsq_dir_encode()
  ```
 /*
-* fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
+* fsq_dir_encode(const char * from_call, const char * to_call, const char cmd, const char * message, uint8_t * symbols)
 *
 * Takes an arbitrary message and returns a FSQ channel symbol table.
 *
@@ -231,23 +234,25 @@ Changelog
 ---------
 * v1.1.2
 
-    Fix buffer bug in _jt_message_prep()_ that caused messages of 11 chars to lock up the processor
+    * Fix buffer bug in _jt_message_prep()_ that caused messages of 11 chars to lock up the processor
+    * Made a handful of changes to make the library more friendly to ATmegaxx8 processors
+    * Rewrote example sketch to be generically compatible with most Arduino platforms
 
 * v1.1.1
 
-    Update example sketch for Si5351Arduino v2.0.0
+    * Update example sketch for Si5351Arduino v2.0.0
 
 * v1.1.0
 
-    Added FSQ
+    * Added FSQ
 
 * v1.0.1
 
-    Fixed a bug in _jt65_interleave()_ that was causing a buffer overrun.
+    * Fixed a bug in _jt65_interleave()_ that was causing a buffer overrun.
 
 * v1.0.0
 
-    Initial Release
+    * Initial Release
 
 License
 -------

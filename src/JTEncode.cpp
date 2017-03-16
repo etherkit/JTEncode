@@ -29,6 +29,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+#include <avr/pgmspace.h>
+#endif
+
 #include "Arduino.h"
 
 // Define an upper bound on the number of glyphs.  Defining it this
@@ -45,7 +49,7 @@ JTEncode::JTEncode(void)
 }
 
 /*
- * jt65_encode(char * msg, uint8_t * symbols)
+ * jt65_encode(const char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -55,7 +59,7 @@ JTEncode::JTEncode(void)
  *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt65_encode(char * msg, uint8_t * symbols)
+void JTEncode::jt65_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
@@ -89,7 +93,7 @@ void JTEncode::jt65_encode(char * msg, uint8_t * symbols)
 }
 
 /*
- * jt9_encode(char * msg, uint8_t * symbols)
+ * jt9_encode(const char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -99,7 +103,7 @@ void JTEncode::jt65_encode(char * msg, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt9_encode(char * msg, uint8_t * symbols)
+void JTEncode::jt9_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
@@ -138,7 +142,7 @@ void JTEncode::jt9_encode(char * msg, uint8_t * symbols)
 }
 
 /*
- * jt4_encode(char * msg, uint8_t * symbols)
+ * jt4_encode(const char * msg, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
@@ -148,7 +152,7 @@ void JTEncode::jt9_encode(char * msg, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size JT4_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::jt4_encode(char * msg, uint8_t * symbols)
+void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
@@ -180,7 +184,7 @@ void JTEncode::jt4_encode(char * msg, uint8_t * symbols)
 }
 
 /*
- * wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
+ * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
@@ -191,11 +195,17 @@ void JTEncode::jt4_encode(char * msg, uint8_t * symbols)
  *  Ensure that you pass a uint8_t array of size WSPR_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbols)
+void JTEncode::wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
 {
+  char call_[7];
+  char loc_[5];
+  uint8_t dbm_ = dbm;
+  memcpy(call_, call, 6);
+  memcpy(loc_, loc, 4);
+
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
-  wspr_message_prep(call, loc, dbm);
+  wspr_message_prep(call_, loc_, dbm_);
 
   // Bit packing
   // -----------
@@ -217,7 +227,7 @@ void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbo
 }
 
 /*
- * fsq_encode(cahr * from_call, char * message, uint8_t * symbols)
+ * fsq_encode(const char * from_call, const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -228,7 +238,7 @@ void JTEncode::wspr_encode(char * call, char * loc, uint8_t dbm, uint8_t * symbo
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
  */
-void JTEncode::fsq_encode(char * from_call, char * message, uint8_t * symbols)
+void JTEncode::fsq_encode(const char * from_call, const char * message, uint8_t * symbols)
 {
   char tx_buffer[155];
   char * tx_message;
@@ -302,7 +312,7 @@ void JTEncode::fsq_encode(char * from_call, char * message, uint8_t * symbols)
 }
 
 /*
- * fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
+ * fsq_dir_encode(const char * from_call, const char * to_call, const char cmd, const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message and returns a FSQ channel symbol table.
  *
@@ -315,7 +325,7 @@ void JTEncode::fsq_encode(char * from_call, char * message, uint8_t * symbols)
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
  */
-void JTEncode::fsq_dir_encode(char * from_call, char * to_call, char cmd, char * message, uint8_t * symbols)
+void JTEncode::fsq_dir_encode(const char * from_call, const char * to_call, const char cmd, const char * message, uint8_t * symbols)
 {
   char tx_buffer[155];
   char * tx_message;
@@ -532,7 +542,8 @@ void JTEncode::wspr_message_prep(char * call, char * loc, uint8_t dbm)
 		loc[i] = toupper(loc[i]);
 		if(!(isdigit(loc[i]) || (loc[i] >= 'A' && loc[i] <= 'R')))
 		{
-			loc = "AA00";
+      memcpy(loc, "AA00", 5);
+      //loc = "AA00";
 		}
 	}
 
@@ -725,38 +736,18 @@ void JTEncode::jt65_interleave(uint8_t * s)
 
 void JTEncode::jt9_interleave(uint8_t * s)
 {
-  uint8_t i, j, k, n;
+  uint8_t i, j;
   uint8_t d[JT9_BIT_COUNT];
-  uint8_t j0[JT9_BIT_COUNT];
 
-  k = 0;
-
-  // Build the interleave table
-  for(i = 0; i < 255; i++)
+  // Do the interleave
+  for(i = 0; i < JT9_BIT_COUNT; i++)
   {
-    n = 0;
-
-    for(j = 0; j < 8; j++)
-    {
-      n = (n << 1) + ((i >> j) & 1);
-    }
-
-    if(n < 206)
-    {
-      j0[k] = n;
-      k++;
-    }
-
-    if(k >= 206)
-    {
-      break;
-    }
-  }
-
-  // Now do the interleave
-  for(i = 0; i < 206; i++)
-  {
-    d[j0[i]] = s[i];
+    #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+    j = pgm_read_byte(&jt9i[i]);
+    d[j] = s[i];
+    #else
+    d[jt9i[i]] = s[i];
+    #endif
   }
 
   memcpy(s, d, JT9_BIT_COUNT);
@@ -972,9 +963,10 @@ void JTEncode::convolve(uint8_t * c, uint8_t * s, uint8_t message_size, uint8_t 
 void JTEncode::rs_encode(uint8_t * data, uint8_t * symbols)
 {
   // Adapted from wrapkarn.c in the WSJT-X source code
-  unsigned int dat1[12];
-  unsigned int b[51];
-  unsigned int i;
+  uint8_t dat1[12];
+  uint8_t b[51];
+  uint8_t sym[JT65_ENCODE_COUNT];
+  uint8_t i;
 
   // Reverse data order for the Karn codec.
   for(i = 0; i < 12; i++)
@@ -988,13 +980,15 @@ void JTEncode::rs_encode(uint8_t * data, uint8_t * symbols)
   // Move parity symbols and data into symbols array, in reverse order.
   for (i = 0; i < 51; i++)
   {
-    symbols[50 - i] = b[i];
+    sym[50 - i] = b[i];
   }
 
   for (i = 0; i < 12; i++)
   {
-    symbols[i + 51] = dat1[11 - i];
+    sym[i + 51] = dat1[11 - i];
   }
+
+  memcpy(symbols, sym, JT65_ENCODE_COUNT);
 }
 
 uint8_t JTEncode::crc8(const char * text)
@@ -1006,7 +1000,11 @@ uint8_t JTEncode::crc8(const char * text)
   for(i = 0; i < strlen(text); i++)
   {
     ch = text[i];
+    #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
     crc = pgm_read_byte(&(crc8_table[(crc) ^ ch]));
+    #else
+    crc = crc8_table[(crc) ^ ch];
+    #endif
     crc &= 0xFF;
   }
 
