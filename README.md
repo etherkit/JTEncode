@@ -6,7 +6,7 @@ Please feel free to use the issues feature of GitHub if you run into problems or
 
 Hardware Requirements and Setup
 -------------------------------
-This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno, an Uno clone, and an Arduino Zero clone. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
+This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno, an Uno clone, an Arduino Zero clone, and a NodeMCU. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
 
 How To Install
 --------------
@@ -232,6 +232,11 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.1.3
+
+    * Add support for ESP8266
+    * Fix WSPR regression in last release
+
 * v1.1.2
 
     * Fix buffer bug in _jt_message_prep()_ that caused messages of 11 chars to lock up the processor

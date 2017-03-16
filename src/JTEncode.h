@@ -27,7 +27,6 @@
 #include "Arduino.h"
 
 #include <stdint.h>
-//#include <avr/pgmspace.h>
 
 #define JT65_SYMBOL_COUNT                   126
 #define JT9_SYMBOL_COUNT                    85

@@ -200,8 +200,8 @@ void JTEncode::wspr_encode(const char * call, const char * loc, const uint8_t db
   char call_[7];
   char loc_[5];
   uint8_t dbm_ = dbm;
-  memcpy(call_, call, 6);
-  memcpy(loc_, loc, 4);
+  strcpy(call_, call);
+  strcpy(loc_, loc);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -742,11 +742,12 @@ void JTEncode::jt9_interleave(uint8_t * s)
   // Do the interleave
   for(i = 0; i < JT9_BIT_COUNT; i++)
   {
-    #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+    //#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+    #if defined(__arm__)
+    d[jt9i[i]] = s[i];
+    #else
     j = pgm_read_byte(&jt9i[i]);
     d[j] = s[i];
-    #else
-    d[jt9i[i]] = s[i];
     #endif
   }
 
@@ -1000,10 +1001,11 @@ uint8_t JTEncode::crc8(const char * text)
   for(i = 0; i < strlen(text); i++)
   {
     ch = text[i];
-    #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
-    crc = pgm_read_byte(&(crc8_table[(crc) ^ ch]));
-    #else
+    //#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+    #if defined(__arm__)
     crc = crc8_table[(crc) ^ ch];
+    #else
+    crc = pgm_read_byte(&(crc8_table[(crc) ^ ch]));
     #endif
     crc &= 0xFF;
   }
