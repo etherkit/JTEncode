@@ -6,7 +6,7 @@ Please feel free to use the issues feature of GitHub if you run into problems or
 
 Hardware Requirements and Setup
 -------------------------------
-This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno and an Uno clone. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
+This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno, an Uno clone, and an Arduino Zero clone. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
 
 How To Install
 --------------
@@ -116,7 +116,7 @@ Once the channel symbols have been generated, it is a simple matter of transmitt
     // Now transmit the channel symbols
     for(i = 0; i < symbol_count; i++)
     {
-        si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), 0, SI5351_CLK0);
+        si5351.set_freq((freq * 100) + (tx_buffer[i] * tone_spacing), SI5351_CLK0);
         delay(tone_delay);
     }
 
