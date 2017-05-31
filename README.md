@@ -4,6 +4,10 @@ This library very simply generates a set of channel symbols for JT65, JT9, JT4, 
 
 Please feel free to use the issues feature of GitHub if you run into problems or have suggestions for important features to implement.
 
+Thanks For Your Support!
+------------------------
+If you would like to support my library development efforts, I would ask that you please consider becoming my patron on [Patreon](https://www.patreon.com/NT7S). Thank you!
+
 Hardware Requirements and Setup
 -------------------------------
 This library has been written for the Arduino platform and has been successfully tested on the Arduino Uno, an Uno clone, an Arduino Zero clone, and a NodeMCU. Since the library itself does not access the hardware, there is no reason it should not run on any Arduino model of recent vintage as long as it has at least 2 kB of RAM.
