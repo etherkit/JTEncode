@@ -6,7 +6,7 @@ Please feel free to use the issues feature of GitHub if you run into problems or
 
 Thanks For Your Support!
 ------------------------
-If you would like to support my library development efforts, I would ask that you please consider becoming my patron on [Patreon](https://www.patreon.com/NT7S). Thank you!
+If you would like to support my library development efforts, I would ask that you please consider sending a [PayPal tip](https://paypal.me/NT7S). Thank you!
 
 Hardware Requirements and Setup
 -------------------------------
