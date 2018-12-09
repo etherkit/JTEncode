@@ -1,7 +1,7 @@
 /*
  * JTEncode.cpp - JT65/JT9/WSPR/FSQ encoder library for Arduino
  *
- * Copyright (C) 2015-2016 Jason Milldrum <milldrum@gmail.com>
+ * Copyright (C) 2015-2018 Jason Milldrum <milldrum@gmail.com>
  *
  * Based on the algorithms presented in the WSJT software suite.
  * Thanks to Andy Talbot G4JNT for the whitepaper on the WSPR encoding
@@ -22,6 +22,8 @@
  */
 
 #include <JTEncode.h>
+#include <crc14.h>
+#include <generator.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -404,6 +406,30 @@ void JTEncode::fsq_dir_encode(const char * from_call, const char * to_call, cons
   symbols[symbol_pos] = 0xff;
 }
 
+void JTEncode::ft8_encode(const char * msg, uint8_t * symbols)
+{
+    uint8_t i;
+
+    char message[14];
+    memset(message, 0, 14);
+    strcpy(message, msg);
+
+    // Bit packing
+    // -----------
+    uint8_t c[77];
+    memset(c, 0, 77);
+    ft8_bit_packing(message, c);
+
+    // Message Encoding
+    // ----------------
+    uint8_t s[FT8_BIT_COUNT];
+    ft8_encode(c, s);
+
+    // Merge with sync vector
+    // ----------------------
+    ft8_merge_sync_vector(s, symbols);
+}
+
 /* Private Class Members */
 
 uint8_t JTEncode::jt_code(char c)
@@ -449,6 +475,49 @@ uint8_t JTEncode::jt_code(char c)
   }
 }
 
+uint8_t JTEncode::ft_code(char c)
+{
+	/* Validate the input then return the proper integer code */
+	// Return 255 as an error code if the char is not allowed
+
+	if(isdigit(c))
+	{
+		return (uint8_t)(c) - 47;
+	}
+	else if(c >= 'A' && c <= 'Z')
+	{
+		return (uint8_t)(c) - 54;
+	}
+	else if(c == ' ')
+	{
+		return 0;
+	}
+	else if(c == '+')
+	{
+		return 38;
+	}
+	else if(c == '-')
+	{
+		return 39;
+	}
+	else if(c == '.')
+	{
+		return 40;
+	}
+	else if(c == '/')
+	{
+		return 41;
+	}
+	else if(c == '?')
+	{
+		return 42;
+	}
+	else
+	{
+		return 255;
+	}
+}
+
 uint8_t JTEncode::wspr_code(char c)
 {
   // Validate the input then return the proper integer code.
@@ -477,6 +546,17 @@ uint8_t JTEncode::gray_code(uint8_t c)
   return (c >> 1) ^ c;
 }
 
+int8_t JTEncode::hex2int(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return -1;
+}
+
 void JTEncode::jt_message_prep(char * message)
 {
   uint8_t i;
@@ -499,6 +579,25 @@ void JTEncode::jt_message_prep(char * message)
       message[i] = toupper(message[i]);
     }
   }
+}
+
+void JTEncode::ft_message_prep(char * message)
+{
+  uint8_t i;
+  char temp_msg[14];
+
+  snprintf(temp_msg, 14, "%*s", 13, message);
+
+  // Convert all chars to uppercase
+  for(i = 0; i < 13; i++)
+  {
+    if(islower(temp_msg[i]))
+    {
+      temp_msg[i] = toupper(temp_msg[i]);
+    }
+  }
+
+  strcpy(message, temp_msg);
 }
 
 void JTEncode::wspr_message_prep(char * call, char * loc, uint8_t dbm)
@@ -717,6 +816,169 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 	c[10] = 0;
 }
 
+void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
+{
+    // Just encoding type 0 free text and type 0.5 telemetry for now
+
+	// The bit packing algorithm is:
+	// sum(message(pos) * 42^pos)
+
+	uint8_t i3 = 0;
+	uint8_t n3 = 0;
+	uint8_t qa[10];
+	uint8_t qb[10];
+	char c18[19];
+	bool telem = false;
+	char temp_msg[19];
+	memset(qa, 0, 10);
+	memset(qb, 0, 10);
+
+	uint8_t i, j, x, i0;
+	uint32_t ireg = 0;
+
+	// See if this is a telemetry message
+	// Has to be hex digits, can be no more than 18
+	for(i = 0; i < 19; ++i)
+	{
+		if(message[i] == 0 || message[i] == ' ')
+		{
+			break;
+		}
+		else if(hex2int(message[i]) == -1)
+		{
+			telem = false;
+			break;
+		}
+		else
+		{
+			c18[i] = message[i];
+			telem = true;
+		}
+	}
+
+	// If telemetry
+	if(telem)
+	{
+		// Get the first 18 hex digits
+		for(i = 0; i < strlen(message); ++i)
+		{
+			i0 = i;
+			if(message[i] == ' ')
+			{
+				--i0;
+				break;
+			}
+		}
+
+		memset(c18, 0, 19);
+		memmove(c18, message, i0 + 1);
+		snprintf(temp_msg, 19, "%*s", 18, c18);
+
+		// Convert all chars to uppercase
+	    for(i = 0; i < strlen(temp_msg); i++)
+	    {
+	      if(islower(temp_msg[i]))
+	      {
+	        temp_msg[i] = toupper(temp_msg[i]);
+	      }
+	    }
+		strcpy(message, temp_msg);
+
+
+		uint8_t temp_int;
+		temp_int = message[0] == ' ' ? 0 : hex2int(message[0]);
+		for(i = 1; i < 4; ++i)
+		{
+			codeword[i - 1] = (((temp_int << i) & 0x8) >> 3) & 1;
+		}
+		temp_int = message[1] == ' ' ? 0 : hex2int(message[1]);
+		for(i = 0; i < 4; ++i)
+		{
+			codeword[i + 3] = (((temp_int << i) & 0x8) >> 3) & 1;
+		}
+		for(i = 0; i < 8; ++i)
+		{
+			if(message[2 * i + 2] == ' ')
+			{
+				temp_int = 0;
+			}
+			else
+			{
+				temp_int = hex2int(message[2 * i + 2]);
+			}
+			for(j = 0; j < 4; ++j)
+			{
+				codeword[(i + 1) * 8 + j - 1] = (((temp_int << j) & 0x8) >> 3) & 1;
+			}
+			if(message[2 * i + 3] == ' ')
+			{
+				temp_int = 0;
+			}
+			else
+			{
+				temp_int = hex2int(message[2 * i + 3]);
+			}
+			for(j = 0; j < 4; ++j)
+			{
+				codeword[(i + 1) * 8 + j + 3] = (((temp_int << j) & 0x8) >> 3) & 1;
+			}
+		}
+
+		i3 = 0;
+		n3 = 5;
+	}
+	else
+	{
+		ft_message_prep(message);
+
+		for(i = 0; i < 13; ++i)
+		{
+			x = ft_code(message[i]);
+
+			// mult
+			ireg = 0;
+			for(j = 0; j < 9; ++j)
+			{
+				ireg = (uint8_t)qa[j] * 42 + (uint8_t)((ireg >> 8) & 0xff);
+				qb[j] = (uint8_t)(ireg & 0xff);
+			}
+			qb[9] = (uint8_t)((ireg >> 8) & 0xff);
+
+			// add
+			ireg = x << 8;
+			for(j = 0; j < 9; ++j)
+			{
+				ireg = (uint8_t)qb[j] + (uint8_t)((ireg >> 8) & 0xff);
+				qa[j] = (uint8_t)(ireg & 0xff);
+			}
+			qa[9] = (uint8_t)((ireg >> 8) & 0xff);
+		}
+
+		// Format bits to output array
+		for(i = 1; i < 8; ++i)
+		{
+			codeword[i - 1] = (((qa[8] << i) & 0x80) >> 7) & 1;
+		}
+		for(i = 0; i < 8; ++i)
+		{
+			for(j = 0; j < 8; ++j)
+			{
+				codeword[(i + 1) * 8 + j - 1] = (((qa[7 - i] << j) & 0x80) >> 7) & 1;
+			}
+		}
+	}
+
+	// Write the message type bits at the end of the array
+	for(i = 0; i < 3; ++i)
+	{
+		codeword[i + 71] = (n3 >> i) & 1;
+	}
+	for(i = 0; i < 3; ++i)
+	{
+		codeword[i + 74] = (i3 >> i) & 1;
+	}
+}
+
 void JTEncode::jt65_interleave(uint8_t * s)
 {
   uint8_t i, j;
@@ -820,6 +1082,78 @@ void JTEncode::jt_gray_code(uint8_t * g, uint8_t symbol_count)
   }
 }
 
+void JTEncode::ft8_encode(uint8_t* codeword, uint8_t* symbols)
+{
+	const uint8_t FT8_N = 174;
+	const uint8_t FT8_K = 91;
+	const uint8_t FT8_M = FT8_N - FT8_K;
+
+	uint8_t tempchar[FT8_K];
+	uint8_t message91[FT8_K];
+	uint8_t pchecks[FT8_M];
+	uint8_t i1_msg_bytes[12];
+	uint8_t i, j;
+	uint16_t ncrc14;
+
+	crc_t crc;
+	crc_cfg_t crc_cfg;
+	crc_cfg.reflect_in = 0;
+	crc_cfg.xor_in = 0;
+	crc_cfg.reflect_out = 0;
+	crc_cfg.xor_out = 0;
+	crc = crc_init(&crc_cfg);
+
+	// Add 14-bit CRC to form 91-bit message
+	memset(tempchar, 0, 91);
+	memcpy(tempchar, codeword, 77);
+	tempchar[77] = 0;
+	tempchar[78] = 0;
+	tempchar[79] = 0;
+	memset(i1_msg_bytes, 0, 12);
+	for(i = 0; i < 10; ++i)
+	{
+		for(j = 0; j < 8; ++j)
+		{
+			i1_msg_bytes[i] <<= 1;
+			i1_msg_bytes[i] |= tempchar[i * 8 + j];
+		}
+	}
+
+	ncrc14 = crc_update(&crc_cfg, crc, (unsigned char *)i1_msg_bytes, 12);
+	crc = crc_finalize(&crc_cfg, crc);
+
+	for(i = 0; i < 14; ++i)
+	{
+		if((((ncrc14 << (i + 2)) & 0x8000) >> 15) & 1)
+		{
+			tempchar[i + 77] = 1;
+		}
+		else
+		{
+			tempchar[i + 77] = 0;
+		}
+	}
+	memcpy(message91, tempchar, 91);
+
+	for(i = 0; i < FT8_M; ++i)
+	{
+		uint32_t nsum = 0;
+		for(j = 0; j < FT8_K; ++j)
+		{
+			uint8_t bits = generator_bits[i][j / 8];
+			bits <<= (j % 8);
+			bits &= 0x80;
+			bits >>= 7;
+			bits &= 1;
+			nsum += (message91[j] * bits);
+		}
+		pchecks[i] = nsum % 2;
+	}
+
+	memcpy(symbols, message91, FT8_K);
+	memcpy(symbols + FT8_K, pchecks, FT8_M);
+}
+
 void JTEncode::jt65_merge_sync_vector(uint8_t * g, uint8_t * symbols)
 {
   uint8_t i, j = 0;
@@ -907,6 +1241,31 @@ void JTEncode::wspr_merge_sync_vector(uint8_t * g, uint8_t * symbols)
 	for(i = 0; i < WSPR_SYMBOL_COUNT; i++)
 	{
 		symbols[i] = sync_vector[i] + (2 * g[i]);
+	}
+}
+
+void JTEncode::ft8_merge_sync_vector(uint8_t* symbols, uint8_t* output)
+{
+	const uint8_t costas7x7[7] = {3, 1, 4, 0, 6, 5, 2};
+	const uint8_t graymap[8] = {0, 1, 3, 2, 5, 6, 4, 7};
+	uint8_t i, j, k, idx;
+
+	// Insert Costas sync arrays
+	memcpy(output, costas7x7, 7);
+	memcpy(output + 36, costas7x7, 7);
+	memcpy(output + FT8_SYMBOL_COUNT - 7, costas7x7, 7);
+
+	k = 6;
+	for(j = 0; j < 58; ++j) // 58 data symbols
+	{
+		i = 3 * j;
+		++k;
+		if(j == 29)
+		{
+			k += 7;
+		}
+		idx = symbols[i] * 4 + symbols[i + 1] * 2 + symbols[i + 2];
+		output[k] = graymap[idx];
 	}
 }
 
