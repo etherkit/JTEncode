@@ -504,25 +504,25 @@ uint8_t JTEncode::ft_code(char c)
 	{
 		return 0;
 	}
-	else if(c == '+')
+  else if(c == '+')
 	{
-		return 38;
+		return 37;
 	}
 	else if(c == '-')
 	{
-		return 39;
+		return 38;
 	}
 	else if(c == '.')
 	{
-		return 40;
+		return 39;
 	}
 	else if(c == '/')
 	{
-		return 41;
+		return 40;
 	}
 	else if(c == '?')
 	{
-		return 42;
+		return 41;
 	}
 	else
 	{
