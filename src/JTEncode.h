@@ -31,6 +31,10 @@
 
 #include <stdint.h>
 
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+#include <avr/pgmspace.h>
+#endif
+
 #define JT65_SYMBOL_COUNT                   126
 #define JT9_SYMBOL_COUNT                    85
 #define JT4_SYMBOL_COUNT                    207

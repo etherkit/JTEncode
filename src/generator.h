@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
+#include <avr/pgmspace.h>
+#endif
+
 const uint8_t generator_bits[83][12] PROGMEM =
 {
     {0b10000011, 0b00101001, 0b11001110, 0b00010001, 0b10111111, 0b00110001, 0b11101010, 0b11110101, 0b00001001, 0b11110010, 0b01111111, 0b11000000},

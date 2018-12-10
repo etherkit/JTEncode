@@ -51,14 +51,14 @@ JTEncode::JTEncode(void)
 }
 
 /*
- * jt65_encode(const char * msg, uint8_t * symbols)
+ * jt65_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT65_SYMBOL_COUNT to the method.
  *
  */
 void JTEncode::jt65_encode(const char * msg, uint8_t * symbols)
@@ -95,14 +95,14 @@ void JTEncode::jt65_encode(const char * msg, uint8_t * symbols)
 }
 
 /*
- * jt9_encode(const char * msg, uint8_t * symbols)
+ * jt9_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT9_SYMBOL_COUNT to the method.
  *
  */
 void JTEncode::jt9_encode(const char * msg, uint8_t * symbols)
@@ -144,14 +144,14 @@ void JTEncode::jt9_encode(const char * msg, uint8_t * symbols)
 }
 
 /*
- * jt4_encode(const char * msg, uint8_t * symbols)
+ * jt4_encode(const char * message, uint8_t * symbols)
  *
  * Takes an arbitrary message of up to 13 allowable characters and returns
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT4_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT9_SYMBOL_COUNT to the method.
  *
  */
 void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
@@ -191,10 +191,10 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
  * call - Callsign (6 characters maximum).
- * loc - Maidenhead grid locator (4 charcters maximum).
+ * loc - Maidenhead grid locator (4 characters maximum).
  * dbm - Output power in dBm.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size WSPR_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
  *
  */
 void JTEncode::wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
@@ -235,7 +235,7 @@ void JTEncode::wspr_encode(const char * call, const char * loc, const uint8_t db
  *
  * from_call - Callsign of issuing station (maximum size: 20)
  * message - Null-terminated message string, no greater than 130 chars in length
- * symbols - Array of channel symbols to transmit retunred by the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
@@ -322,7 +322,7 @@ void JTEncode::fsq_encode(const char * from_call, const char * message, uint8_t 
  * to_call - Callsign to which message is directed (maximum size: 20)
  * cmd - Directed command
  * message - Null-terminated message string, no greater than 100 chars in length
- * symbols - Array of channel symbols to transmit retunred by the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
@@ -406,28 +406,40 @@ void JTEncode::fsq_dir_encode(const char * from_call, const char * to_call, cons
   symbols[symbol_pos] = 0xff;
 }
 
+/*
+ * ft8_encode(const char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message of up to 13 allowable characters or a telemetry message
+ * of up to 18 hexadecimal digit (in string format) and returns a channel symbol table.
+ * Encoded for the FT8 protocol used in WSJT-X v2.0 and beyond (79 channel symbols).
+ *
+ * message - Type 0.0 free text message or Type 0.5 telemetry message.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size FT8_SYMBOL_COUNT to the method.
+ *
+ */
 void JTEncode::ft8_encode(const char * msg, uint8_t * symbols)
 {
-    uint8_t i;
+  uint8_t i;
 
-    char message[14];
-    memset(message, 0, 14);
-    strcpy(message, msg);
+  char message[19];
+  memset(message, 0, 19);
+  strcpy(message, msg);
 
-    // Bit packing
-    // -----------
-    uint8_t c[77];
-    memset(c, 0, 77);
-    ft8_bit_packing(message, c);
+  // Bit packing
+  // -----------
+  uint8_t c[77];
+  memset(c, 0, 77);
+  ft8_bit_packing(message, c);
 
-    // Message Encoding
-    // ----------------
-    uint8_t s[FT8_BIT_COUNT];
-    ft8_encode(c, s);
+  // Message Encoding
+  // ----------------
+  uint8_t s[FT8_BIT_COUNT];
+  ft8_encode(c, s);
 
-    // Merge with sync vector
-    // ----------------------
-    ft8_merge_sync_vector(s, symbols);
+  // Merge with sync vector
+  // ----------------------
+  ft8_merge_sync_vector(s, symbols);
 }
 
 /* Private Class Members */
@@ -586,7 +598,7 @@ void JTEncode::ft_message_prep(char * message)
   uint8_t i;
   char temp_msg[14];
 
-  snprintf(temp_msg, 14, "%*s", 13, message);
+  snprintf(temp_msg, 14, "%13s", message);
 
   // Convert all chars to uppercase
   for(i = 0; i < 13; i++)
@@ -1140,7 +1152,11 @@ void JTEncode::ft8_encode(uint8_t* codeword, uint8_t* symbols)
 		uint32_t nsum = 0;
 		for(j = 0; j < FT8_K; ++j)
 		{
-			uint8_t bits = generator_bits[i][j / 8];
+      #if defined(__arm__)
+      uint8_t bits = generator_bits[i][j / 8];
+      #else
+      uint8_t bits = pgm_read_byte(&(generator_bits[i][j / 8]));
+      #endif
 			bits <<= (j % 8);
 			bits &= 0x80;
 			bits >>= 7;

@@ -6,7 +6,7 @@ Please feel free to use the issues feature of GitHub if you run into problems or
 
 Thanks For Your Support!
 ------------------------
-If you would like to support my library development efforts, I would ask that you please consider becoming my patron on [Patreon](https://www.patreon.com/NT7S). Thank you!
+If you would like to support my library development efforts, I would ask that you please consider sending a [PayPal tip](https://paypal.me/NT7S). Thank you!
 
 Hardware Requirements and Setup
 -------------------------------
@@ -28,7 +28,7 @@ There is a simple example that is placed in your examples menu under JTEncode. O
 
 To run this example, be sure to download the [Si5351Arduino](https://github.com/etherkit/Si5351Arduino) library and follow the instructions there to connect the Si5351A Breakout Board to your Arduino. In order to trigger transmissions, you will also need to connect a momentary pushbutton from pin 12 of the Arduino to ground.
 
-The example sketch itself is fairly straightforward. JT65, JT9, JT4, WSPR, and FSQ modes are modulated in same way: phase-continuous multiple-frequency shift keying (MFSK). The message to be transmitted is passed to the JTEncode method corresponding to the desired mode, along with a pointer to an array which holds the returned channel symbols. When the pushbutton is pushed, the sketch then transmits each channel symbol sequentially as an offset from the base frequency given in the sketch define section.
+The example sketch itself is fairly straightforward. JT65, JT9, JT4, FT8, WSPR, and FSQ modes are modulated in same way: phase-continuous multiple-frequency shift keying (MFSK). The message to be transmitted is passed to the JTEncode method corresponding to the desired mode, along with a pointer to an array which holds the returned channel symbols. When the pushbutton is pushed, the sketch then transmits each channel symbol sequentially as an offset from the base frequency given in the sketch define section.
 
 An instance of the JTEncode object is created:
 
@@ -63,6 +63,12 @@ On sketch startup, the mode parameters are set based on which mode is currently 
       symbol_count = WSPR_SYMBOL_COUNT; // From the library defines
       tone_spacing = WSPR_TONE_SPACING;
       tone_delay = WSPR_DELAY;
+      break;
+    case MODE_FT8:
+      freq = FT8_DEFAULT_FREQ;
+      symbol_count = FT8_SYMBOL_COUNT; // From the library defines
+      tone_spacing = FT8_TONE_SPACING;
+      tone_delay = FT8_DELAY;
       break;
     case MODE_FSQ_2:
       freq = FSQ_DEFAULT_FREQ;
@@ -105,6 +111,9 @@ Before transmit, the proper class method is chosen based on the desired mode, th
     case MODE_WSPR:
       jtencode.wspr_encode(call, loc, dbm, tx_buffer);
       break;
+    case MODE_FT8:
+      jtencode.ft_encode(message, tx_buffer);
+      break;
     case MODE_FSQ_2:
     case MODE_FSQ_3:
     case MODE_FSQ_4_5:
@@ -135,8 +144,8 @@ Public Methods
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT65_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT65_SYMBOL_COUNT to the method.
  *
  */
 ```
@@ -149,8 +158,8 @@ Public Methods
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT9_SYMBOL_COUNT to the method.
  *
  */
 ```
@@ -164,8 +173,8 @@ Public Methods
  * a channel symbol table.
  *
  * message - Plaintext Type 6 message.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size JT9_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size JT9_SYMBOL_COUNT to the method.
  *
  */
  ```
@@ -178,13 +187,29 @@ Public Methods
  * Takes an arbitrary message of up to 13 allowable characters and returns
  *
  * call - Callsign (6 characters maximum).
- * loc - Maidenhead grid locator (4 charcters maximum).
+ * loc - Maidenhead grid locator (4 characters maximum).
  * dbm - Output power in dBm.
- * symbols - Array of channel symbols to transmit retunred by the method.
- *  Ensure that you pass a uint8_t array of size WSPR_SYMBOL_COUNT to the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
  *
  */
 ```
+
+### ft8_encode()
+```
+/*
+ * ft8_encode(const char * message, uint8_t * symbols)
+ *
+ * Takes an arbitrary message of up to 13 allowable characters or a telemetry message
+ * of up to 18 hexadecimal digit (in string format) and returns a channel symbol table.
+ * Encoded for the FT8 protocol used in WSJT-X v2.0 and beyond (79 channel symbols).
+ *
+ * message - Type 0.0 free text message or Type 0.5 telemetry message.
+ * symbols - Array of channel symbols to transmit returned by the method.
+ *  Ensure that you pass a uint8_t array of at least size FT8_SYMBOL_COUNT to the method.
+ *
+ */
+ ```
 
 ### fsq_encode()
 ```
@@ -195,7 +220,7 @@ Public Methods
  *
  * from_call - Callsign of issuing station (maximum size: 20)
  * message - Null-terminated message string, no greater than 130 chars in length
- * symbols - Array of channel symbols to transmit retunred by the method.
+ * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least the size of the message
  *  plus 5 characters to the method. Terminated in 0xFF.
  *
@@ -213,7 +238,7 @@ Public Methods
 * to_call - Callsign to which message is directed (maximum size: 20)
 * cmd - Directed command
 * message - Null-terminated message string, no greater than 100 chars in length
-* symbols - Array of channel symbols to transmit retunred by the method.
+* symbols - Array of channel symbols to transmit returned by the method.
 *  Ensure that you pass a uint8_t array of at least the size of the message
 *  plus 5 characters to the method. Terminated in 0xFF.
 *
@@ -226,16 +251,20 @@ Here are the defines, structs, and enumerations you will find handy to use with 
 
 Defines:
 
-    JT65_SYMBOL_COUNT, JT9_SYMBOL_COUNT, JT4_SYMBOL_COUNT, WSPR_SYMBOL_COUNT
+    JT65_SYMBOL_COUNT, JT9_SYMBOL_COUNT, JT4_SYMBOL_COUNT, WSPR_SYMBOL_COUNT, FT8_SYMBOL_COUNT
 
 Acknowledgements
 ----------------
-Many thanks to Joe Taylor K1JT for his innovative work in amateur radio. We are lucky to have him. The algorithms in this program were derived from the source code in the [WSJT](http://sourceforge.net/projects/wsjt/) suite of applications. Also, many thanks for Andy Talbot G4JNT for [his paper](http://www.g4jnt.com/JTModesBcns.htm) on the WSPR coding protocol, which helped me to understand the WSPR encoding process, which in turn helped me to understand the related JT protocols.
+Many thanks to Joe Taylor K1JT for his innovative work in amateur radio. We are lucky to have him. The algorithms in this program were derived from the source code in the [WSJT-X](https://sourceforge.net/p/wsjt/) suite of applications. Also, many thanks for Andy Talbot G4JNT for [his paper](http://www.g4jnt.com/JTModesBcns.htm) on the WSPR coding protocol, which helped me to understand the WSPR encoding process, which in turn helped me to understand the related JT protocols.
 
 Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick his brain regarding his neat new mode FSQ.
 
 Changelog
 ---------
+* v1.2.0
+
+    * Add support for FT8 protocol (79 symbol version introduced December 2018)
+
 * v1.1.3
 
     * Add support for ESP8266
