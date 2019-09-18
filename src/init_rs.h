@@ -5,7 +5,7 @@
 #undef NULL
 #define NULL ((void *)0)
 
-{
+//{
   int i, j, sr,root,iprim;
 
   rs = NULL;
@@ -103,4 +103,4 @@
     rs->genpoly[i] = rs->index_of[rs->genpoly[i]];
  done:;
 
-}
+//}

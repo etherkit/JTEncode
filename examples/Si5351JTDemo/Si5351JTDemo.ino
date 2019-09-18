@@ -1,10 +1,10 @@
 //
-// Simple JT65/JT9/WSPR/FSQ beacon for Arduino, with the Etherkit
+// Simple JT65/JT9/JT4/FT8/WSPR/FSQ beacon for Arduino, with the Etherkit
 // Si5351A Breakout Board, by Jason Milldrum NT7S.
 //
 // Transmit an abritrary message of up to 13 valid characters
-// (a Type 6 message) in JT65 and JT9, or a standard Type 1
-// message in WSPR.
+// (a Type 6 message) in JT65, JT9, JT4, a type 0.0 or type 0.5 FT8 message,
+// a FSQ message, or a standard Type 1 message in WSPR.
 //
 // Connect a momentary push button to pin 12 to use as the
 // transmit trigger. Get fancy by adding your own code to trigger
@@ -43,11 +43,12 @@
 #include "Wire.h"
 
 // Mode defines
-#define JT9_TONE_SPACING        174           // ~1.74 Hz
-#define JT65_TONE_SPACING       269           // ~2.69 Hz
-#define JT4_TONE_SPACING        437           // ~4.37 Hz
-#define WSPR_TONE_SPACING       146           // ~1.46 Hz
-#define FSQ_TONE_SPACING        879           // ~8.79 Hz
+#define JT9_TONE_SPACING        174          // ~1.74 Hz
+#define JT65_TONE_SPACING       269          // ~2.69 Hz
+#define JT4_TONE_SPACING        437          // ~4.37 Hz
+#define WSPR_TONE_SPACING       146          // ~1.46 Hz
+#define FSQ_TONE_SPACING        879          // ~8.79 Hz
+#define FT8_TONE_SPACING        625          // ~6.25 Hz
 
 #define JT9_DELAY               576          // Delay value for JT9-1
 #define JT65_DELAY              371          // Delay in ms for JT65A
@@ -57,12 +58,14 @@
 #define FSQ_3_DELAY             333          // Delay value for 3 baud FSQ
 #define FSQ_4_5_DELAY           222          // Delay value for 4.5 baud FSQ
 #define FSQ_6_DELAY             167          // Delay value for 6 baud FSQ
+#define FT8_DELAY               159          // Delay value for FT8
 
 #define JT9_DEFAULT_FREQ        14078700UL
 #define JT65_DEFAULT_FREQ       14078300UL
 #define JT4_DEFAULT_FREQ        14078500UL
 #define WSPR_DEFAULT_FREQ       14097200UL
 #define FSQ_DEFAULT_FREQ        7105350UL     // Base freq is 1350 Hz higher than dial freq in USB
+#define FT8_DEFAULT_FREQ        14075000UL
 
 #define DEFAULT_MODE            MODE_JT65
 
@@ -72,7 +75,7 @@
 
 // Enumerations
 enum mode {MODE_JT9, MODE_JT65, MODE_JT4, MODE_WSPR, MODE_FSQ_2, MODE_FSQ_3,
-  MODE_FSQ_4_5, MODE_FSQ_6};
+  MODE_FSQ_4_5, MODE_FSQ_6, MODE_FT8};
 
 // Class instantiation
 Si5351 si5351;
@@ -139,6 +142,9 @@ void set_tx_buffer()
   case MODE_WSPR:
     jtencode.wspr_encode(call, loc, dbm, tx_buffer);
     break;
+  case MODE_FT8:
+    jtencode.ft8_encode(message, tx_buffer);
+    break;
   case MODE_FSQ_2:
   case MODE_FSQ_3:
   case MODE_FSQ_4_5:
@@ -192,6 +198,12 @@ void setup()
     symbol_count = WSPR_SYMBOL_COUNT; // From the library defines
     tone_spacing = WSPR_TONE_SPACING;
     tone_delay = WSPR_DELAY;
+    break;
+  case MODE_FT8:
+    freq = FT8_DEFAULT_FREQ;
+    symbol_count = FT8_SYMBOL_COUNT; // From the library defines
+    tone_spacing = FT8_TONE_SPACING;
+    tone_delay = FT8_DELAY;
     break;
   case MODE_FSQ_2:
     freq = FSQ_DEFAULT_FREQ;
