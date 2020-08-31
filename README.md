@@ -262,6 +262,10 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.2.1
+
+    * Fix keywords.txt
+    
 * v1.2.0
 
     * Add support for FT8 protocol (79 symbol version introduced December 2018)
