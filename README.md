@@ -1,5 +1,8 @@
-JT65/JT9/JT4/FT8/WSPR/FSQ Encoder Library for Arduino
+JT65/JT9/JT4/FT8/WSPR/FSQ Encoder Library for <del>Arduino</del> Raspberry Pi Pico
 =====================================================
+
+This is my take on ehterkit's library for generating JT protocols, but using the Raspberry Pi Pico instead of an Arduino.
+
 
 This library very simply generates a set of channel symbols for JT65, JT9, JT4, FT8, or WSPR based on the user providing a properly formatted Type 6 message for JT65, JT9, or JT4 (which is 13 valid characters), Type 0.0 or 0.5 message for FT8 (v2.0.0 protocol) or a callsign, Maidenhead grid locator, and power output for WSPR. It will also generate an arbitrary FSQ message of up to 200 characters in both directed and non-directed format. When paired with a synthesizer that can output frequencies in fine, phase-continuous tuning steps (such as the Si5351), then a beacon or telemetry transmitter can be created which can change the transmitted characters as needed from the Arduino.
 
