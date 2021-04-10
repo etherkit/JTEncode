@@ -21,7 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <JTEncode.h>
+#include "JTEncode.h"
 #include <crc14.h>
 #include <generator.h>
 
@@ -30,12 +30,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
-#include <avr/pgmspace.h>
-#endif
-
-#include "Arduino.h"
 
 // Define an upper bound on the number of glyphs.  Defining it this
 // way allows adding characters without having to update a hard-coded
@@ -268,13 +262,13 @@ void JTEncode::fsq_encode(const char * from_call, const char * message, uint8_t 
 
       // Check each element of the varicode table to see if we've found the
       // character we're trying to send.
-      fch = pgm_read_byte(&fsq_code_table[i].ch);
+      fch = fsq_code_table[i].ch;
 
       if(fch == ch)
       {
           // Found the character, now fetch the varicode chars
-          vcode1 = pgm_read_byte(&(fsq_code_table[i].var[0]));
-          vcode2 = pgm_read_byte(&(fsq_code_table[i].var[1]));
+          vcode1 = fsq_code_table[i].var[0];
+          vcode2 = fsq_code_table[i].var[1];
 
           // Transmit the appropriate tone per a varicode char
           if(vcode2 == 0)
@@ -361,13 +355,13 @@ void JTEncode::fsq_dir_encode(const char * from_call, const char * to_call, cons
 
       // Check each element of the varicode table to see if we've found the
       // character we're trying to send.
-      fch = pgm_read_byte(&fsq_code_table[i].ch);
+      fch = fsq_code_table[i].ch;
 
       if(fch == ch)
       {
           // Found the character, now fetch the varicode chars
-          vcode1 = pgm_read_byte(&(fsq_code_table[i].var[0]));
-          vcode2 = pgm_read_byte(&(fsq_code_table[i].var[1]));
+          vcode1 = fsq_code_table[i].var[0];
+          vcode2 = fsq_code_table[i].var[1];
 
           // Transmit the appropriate tone per a varicode char
           if(vcode2 == 0)
@@ -1016,13 +1010,7 @@ void JTEncode::jt9_interleave(uint8_t * s)
   // Do the interleave
   for(i = 0; i < JT9_BIT_COUNT; i++)
   {
-    //#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
-    #if defined(__arm__)
     d[jt9i[i]] = s[i];
-    #else
-    j = pgm_read_byte(&jt9i[i]);
-    d[j] = s[i];
-    #endif
   }
 
   memcpy(s, d, JT9_BIT_COUNT);
@@ -1152,11 +1140,8 @@ void JTEncode::ft8_encode(uint8_t* codeword, uint8_t* symbols)
 		uint32_t nsum = 0;
 		for(j = 0; j < FT8_K; ++j)
 		{
-      #if defined(__arm__)
-      uint8_t bits = generator_bits[i][j / 8];
-      #else
-      uint8_t bits = pgm_read_byte(&(generator_bits[i][j / 8]));
-      #endif
+
+      uint8_t bits = (generator_bits[i][j / 8]);
 			bits <<= (j % 8);
 			bits &= 0x80;
 			bits >>= 7;
@@ -1376,12 +1361,7 @@ uint8_t JTEncode::crc8(const char * text)
   for(i = 0; i < strlen(text); i++)
   {
     ch = text[i];
-    //#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega16U4__)
-    #if defined(__arm__)
-    crc = crc8_table[(crc) ^ ch];
-    #else
-    crc = pgm_read_byte(&(crc8_table[(crc) ^ ch]));
-    #endif
+    crc = (crc8_table[(crc) ^ ch]);
     crc &= 0xFF;
   }
 
