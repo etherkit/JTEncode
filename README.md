@@ -8,9 +8,7 @@ This library very simply generates a set of channel symbols for JT65, JT9, JT4, 
 
 Please feel free to use the issues feature of GitHub if you run into problems or have suggestions for important features to implement.
 
-Thanks For Your Support!
-------------------------
-If you would like to support my library development efforts, I would ask that you please consider sending a [one-time PayPal tip](https://paypal.me/NT7S) or [subscribe to me on SubscribeStar](https://www.subscribestar.com/nt7s) for an ongoing contribution.. Thank you!
+
 
 Hardware Requirements and Setup
 -------------------------------
