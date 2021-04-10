@@ -1,0 +1,2 @@
+add_library(JTEncode JTEncode.cpp crc14.c encode_rs_int.cpp)
+target_include_directories (JTEncode PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
