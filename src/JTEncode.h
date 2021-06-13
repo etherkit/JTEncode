@@ -1,7 +1,7 @@
 /*
  * JTEncode.h - JT65/JT9/WSPR/FSQ encoder library for Arduino
  *
- * Copyright (C) 2015-2018 Jason Milldrum <milldrum@gmail.com>
+ * Copyright (C) 2015-2021 Jason Milldrum <milldrum@gmail.com>
  *
  * Based on the algorithms presented in the WSJT software suite.
  * Thanks to Andy Talbot G4JNT for the whitepaper on the WSPR encoding
@@ -26,6 +26,7 @@
 
 #include "int.h"
 #include "rs_common.h"
+#include "nhash.h"
 
 #include "Arduino.h"
 
@@ -220,7 +221,7 @@ public:
   void jt65_encode(const char *, uint8_t *);
   void jt9_encode(const char *, uint8_t *);
   void jt4_encode(const char *, uint8_t *);
-  void wspr_encode(const char *, const char *, const uint8_t, uint8_t *);
+  void wspr_encode(const char *, const char *, const int8_t, uint8_t *);
   void fsq_encode(const char *, const char *, uint8_t *);
   void fsq_dir_encode(const char *, const char *, const char, const char *, uint8_t *);
   void ft8_encode(const char *, uint8_t *);
@@ -232,7 +233,7 @@ private:
   int8_t hex2int(char);
   void jt_message_prep(char *);
   void ft_message_prep(char *);
-  void wspr_message_prep(char *, char *, uint8_t);
+  void wspr_message_prep(char *, char *, int8_t);
   void jt65_bit_packing(char *, uint8_t *);
   void jt9_bit_packing(char *, uint8_t *);
   void wspr_bit_packing(uint8_t *);
@@ -254,10 +255,11 @@ private:
   void free_rs_int(void *);
   void * init_rs_int(int, int, int, int, int, int);
   uint8_t crc8(const char *);
+  void pad_callsign(char *);
   void * rs_inst;
-  char callsign[7];
-  char locator[5];
-  uint8_t power;
+  char callsign[12];
+  char locator[7];
+  int8_t power;
 };
 
 #endif

@@ -1,7 +1,7 @@
 JT65/JT9/JT4/FT8/WSPR/FSQ Encoder Library for Arduino
 =====================================================
 
-This library very simply generates a set of channel symbols for JT65, JT9, JT4, FT8, or WSPR based on the user providing a properly formatted Type 6 message for JT65, JT9, or JT4 (which is 13 valid characters), Type 0.0 or 0.5 message for FT8 (v2.0.0 protocol) or a callsign, Maidenhead grid locator, and power output for WSPR. It will also generate an arbitrary FSQ message of up to 200 characters in both directed and non-directed format. When paired with a synthesizer that can output frequencies in fine, phase-continuous tuning steps (such as the Si5351), then a beacon or telemetry transmitter can be created which can change the transmitted characters as needed from the Arduino.
+This library very simply generates a set of channel symbols for JT65, JT9, JT4, FT8, or WSPR based on the user providing a properly formatted Type 6 message for JT65, JT9, or JT4 (which is 13 valid characters), Type 0.0 or 0.5 message for FT8 (v2.0.0 protocol) or a Type 1, Type 2, or Type 3 message for WSPR. It will also generate an arbitrary FSQ message of up to 200 characters in both directed and non-directed format. When paired with a synthesizer that can output frequencies in fine, phase-continuous tuning steps (such as the Si5351), then a beacon or telemetry transmitter can be created which can change the transmitted characters as needed from the Arduino.
 
 Please feel free to use the issues feature of GitHub if you run into problems or have suggestions for important features to implement.
 
@@ -22,6 +22,20 @@ If you need to or would like to install the library in the old way, then you can
 RAM Usage
 ---------
 Most of the encoding functions need to manipulate multiple arrays of symbols in RAM at the same time, and therefore are quite RAM intensive. Care has been taken to put as much data into program memory as is possible, but the encoding functions still can cause problems with the low RAM microcontrollers such as the ATmegaxx8 series. If you are using these, then please be sure to call them only once when a transmit buffer needs to be created or changed, and call them separately of other subroutine calls. When using other microcontrollers that have more RAM, such as most of the ARM ICs, this won't be as much of a problem. If you see unusual freezes, that almost certainly indicates a RAM shortage.
+
+WSPR Messages
+-------------
+JTEncode includes support for all three WSPR message types. A brief listing of the three types is given below:
+
+| Message Type | Fields | Example |
+|--------------|--------|---------|
+| Type 1 | Callsign, Grid (4 digit), Power | NT7S CN85 30 |
+| Type 2 | Callsign with prefix or suffix, Power | NT7S/P 30 |
+| Type 3 | Callsign Hash, Grid (6 digit), Power | \<NT7S\> CN85NM 30 |
+
+Most WSPR messages are type 1, however sometimes type 2 and 3 messages are needed. Type 2 messages allow you to send a callsign with a prefix of up to three characters, a suffix of a single character, or a suffix consisting of two numerical digits. Type 3 messages are typically used in conjunction with type 2 messages since type 2 messages don't include a grid locator. The type 3 message sends a 15-bit hash of the included callsign, along with a 6 digit grid locator and the power.
+
+Type 2 messages can be sent in JTEncode simply by including the slashed prefix or suffix in the callsign field. A type 3 message can be sent by enclosing a callsign with angle brackets (as seen in the example above).
 
 Example
 -------
@@ -185,10 +199,11 @@ Public Methods
 /*
  * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
- * Takes an arbitrary message of up to 13 allowable characters and returns
+ * Takes a callsign, grid locator, and power level and returns a WSPR symbol
+ * table for a Type 1, 2, or 3 message.
  *
- * call - Callsign (6 characters maximum).
- * loc - Maidenhead grid locator (4 characters maximum).
+ * call - Callsign (11 characters maximum).
+ * loc - Maidenhead grid locator (6 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
@@ -262,6 +277,10 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.3.0
+
+    * WSPR Type 2 and Type 3 message capability added
+
 * v1.2.1
 
     * Fix keywords.txt
