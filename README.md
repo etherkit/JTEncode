@@ -318,7 +318,7 @@ Changelog
 
 Arduino Lint Status
 ===================
-[![YourActionName Actions Status](https://github.com/etherkit/JTEncode/workflows/arduino-lint.yml/badge.svg)](https://github.com/etherkit/JTEncode/actions)
+[![arduino-lint Actions Status](https://github.com/etherkit/JTEncode/workflows/arduino-lint/badge.svg)](https://github.com/etherkit/JTEncode/actions)
 
 
 License
