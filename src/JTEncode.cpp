@@ -201,8 +201,8 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
  */
 void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm, uint8_t * symbols)
 {
-  char call_[7];
-  char loc_[5];
+  char call_[12];
+  char loc_[7];
   uint8_t dbm_ = dbm;
   strcpy(call_, call);
   strcpy(loc_, loc);
