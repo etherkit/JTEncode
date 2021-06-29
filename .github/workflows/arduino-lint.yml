@@ -9,4 +9,4 @@ jobs:
       - uses: arduino/arduino-lint-action@v1
         with:
           library-manager: update
-          compliance: strict
+          compliance: specification
