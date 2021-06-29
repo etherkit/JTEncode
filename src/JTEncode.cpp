@@ -49,6 +49,7 @@ JTEncode::JTEncode(void)
 {
   // Initialize the Reed-Solomon encoder
   rs_inst = (struct rs *)(intptr_t)init_rs_int(6, 0x43, 3, 1, 51, 0);
+  memset(callsign, 0, 12);
 }
 
 /*
@@ -189,11 +190,10 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 /*
  * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
- * Takes a callsign, grid locator, and power level and returns a WSPR symbol
- * table for a Type 1, 2, or 3 message.
+ * Takes an arbitrary message of up to 13 allowable characters and returns
  *
- * call - Callsign (11 characters maximum).
- * loc - Maidenhead grid locator (6 characters maximum).
+ * call - Callsign (6 characters maximum).
+ * loc - Maidenhead grid locator (4 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
@@ -814,14 +814,14 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 	if(callsign[0] == '<')
 	{
 		// Type 3 message
-		char base_call[7];
-    memset(base_call, 0, 7);
+		char base_call[12];
+    memset(base_call, 0, 12);
 		uint32_t init_val = 146;
 		char* bracket_avail = strchr(callsign, (int)'>');
 		int call_len = bracket_avail - callsign - 1;
 		strncpy(base_call, callsign + 1, call_len);
 		uint32_t hash = nhash_(base_call, &call_len, &init_val);
-		uint16_t call_hash = hash & 32767;
+		hash &= 32767;
 
 		// Convert 6 char grid square to "callsign" format for transmission
 		// by putting the first character at the end
@@ -840,7 +840,7 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 		n = n * 27 + (wspr_code(locator[4]) - 10);
 		n = n * 27 + (wspr_code(locator[5]) - 10);
 
-		m = (call_hash * 128) - (power + 1) + 64;
+		m = (hash * 128) - (power + 1) + 64;
 	}
 	else if(slash_avail == (void *)0)
 	{
@@ -870,7 +870,7 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 			char base_call[7];
       memset(base_call, 0, 7);
 			strncpy(base_call, callsign, slash_pos);
-			for(i = 0; i < 6; i++)
+			for(i = 0; i < 7; i++)
 			{
 				base_call[i] = toupper(base_call[i]);
 				if(!(isdigit(base_call[i]) || isupper(base_call[i])))
@@ -904,7 +904,6 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 			m = 60000 - 32768 + x;
 
 			m = (m * 128) + power + 2 + 64;
-
 		}
 		else if(callsign[slash_pos + 3] == ' ' || callsign[slash_pos + 3] == 0)
 		{
