@@ -317,7 +317,7 @@ Changelog
     * Initial Release
 
 Arduino Lint Status
-===================
+-------------------
 [![arduino-lint Actions Status](https://github.com/etherkit/JTEncode/workflows/arduino-lint/badge.svg)](https://github.com/etherkit/JTEncode/actions)
 
 
