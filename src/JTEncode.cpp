@@ -190,10 +190,11 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 /*
  * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
- * Takes an arbitrary message of up to 13 allowable characters and returns
+ * Takes a callsign, grid locator, and power level and returns a WSPR symbol
+ * table for a Type 1, 2, or 3 message.
  *
- * call - Callsign (6 characters maximum).
- * loc - Maidenhead grid locator (4 characters maximum).
+ * call - Callsign (11 characters maximum).
+ * loc - Maidenhead grid locator (6 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
