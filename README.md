@@ -316,6 +316,10 @@ Changelog
 
     * Initial Release
 
+Arduino Lint Status
+===================
+[![YourActionName Actions Status](https://github.com/etherkit/JTEncode/workflows/arduino-lint.yml/badge.svg)](https://github.com/etherkit/JTEncode/actions)
+
 
 License
 -------
