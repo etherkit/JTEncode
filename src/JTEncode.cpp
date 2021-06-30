@@ -49,7 +49,7 @@ JTEncode::JTEncode(void)
 {
   // Initialize the Reed-Solomon encoder
   rs_inst = (struct rs *)(intptr_t)init_rs_int(6, 0x43, 3, 1, 51, 0);
-  memset(callsign, 0, 12);
+  // memset(callsign, 0, 13);
 }
 
 /*
@@ -193,7 +193,7 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
  * Takes a callsign, grid locator, and power level and returns a WSPR symbol
  * table for a Type 1, 2, or 3 message.
  *
- * call - Callsign (11 characters maximum).
+ * call - Callsign (12 characters maximum).
  * loc - Maidenhead grid locator (6 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
@@ -202,7 +202,7 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
  */
 void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm, uint8_t * symbols)
 {
-  char call_[12];
+  char call_[13];
   char loc_[7];
   uint8_t dbm_ = dbm;
   strcpy(call_, call);
@@ -624,15 +624,16 @@ void JTEncode::wspr_message_prep(char * call, char * loc, int8_t dbm)
 	uint8_t i;
   for(i = 0; i < 12; i++)
 	{
-		if(callsign[i] != '/' && callsign[i] != '<' && callsign[i] != '>')
+		if(call[i] != '/' && call[i] != '<' && call[i] != '>')
 		{
-			callsign[i] = toupper(callsign[i]);
-			if(!(isdigit(callsign[i]) || isupper(callsign[i])))
+			call[i] = toupper(call[i]);
+			if(!(isdigit(call[i]) || isupper(call[i])))
 			{
-				callsign[i] = ' ';
+				call[i] = ' ';
 			}
 		}
 	}
+  call[12] = 0;
 
   strncpy(callsign, call, 12);
 
@@ -815,8 +816,8 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 	if(callsign[0] == '<')
 	{
 		// Type 3 message
-		char base_call[12];
-    memset(base_call, 0, 12);
+		char base_call[13];
+    memset(base_call, 0, 13);
 		uint32_t init_val = 146;
 		char* bracket_avail = strchr(callsign, (int)'>');
 		int call_len = bracket_avail - callsign - 1;
@@ -1575,10 +1576,15 @@ void JTEncode::pad_callsign(char * call)
 {
 	// If only the 2nd character is a digit, then pad with a space.
 	// If this happens, then the callsign will be truncated if it is
-	// longer than 5 characters.
+	// longer than 6 characters.
 	if(isdigit(call[1]) && isupper(call[2]))
 	{
-		memmove(call + 1, call, 5);
+		// memmove(call + 1, call, 6);
+    call[5] = call[4];
+    call[4] = call[3];
+    call[3] = call[2];
+    call[2] = call[1];
+    call[1] = call[0];
 		call[0] = ' ';
 	}
 
