@@ -202,7 +202,7 @@ Public Methods
  * Takes a callsign, grid locator, and power level and returns a WSPR symbol
  * table for a Type 1, 2, or 3 message.
  *
- * call - Callsign (11 characters maximum).
+ * call - Callsign (12 characters maximum).
  * loc - Maidenhead grid locator (6 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
