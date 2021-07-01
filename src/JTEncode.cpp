@@ -578,12 +578,10 @@ void JTEncode::jt_message_prep(char * message)
 
   // Pad the message with trailing spaces
   uint8_t len = strlen(message);
-  if(len < 13)
+  
+  for(i = len; i < 13; i++)
   {
-    for(i = len; i <= 13; i++)
-    {
-      message[i] = ' ';
-    }
+    message[i] = ' ';
   }
 
   // Convert all chars to uppercase
