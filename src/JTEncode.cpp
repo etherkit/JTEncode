@@ -1,7 +1,7 @@
 /*
  * JTEncode.cpp - JT65/JT9/WSPR/FSQ encoder library for Arduino
  *
- * Copyright (C) 2015-2018 Jason Milldrum <milldrum@gmail.com>
+ * Copyright (C) 2015-2021 Jason Milldrum <milldrum@gmail.com>
  *
  * Based on the algorithms presented in the WSJT software suite.
  * Thanks to Andy Talbot G4JNT for the whitepaper on the WSPR encoding
@@ -24,6 +24,7 @@
 #include <JTEncode.h>
 #include <crc14.h>
 #include <generator.h>
+#include <nhash.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -48,6 +49,7 @@ JTEncode::JTEncode(void)
 {
   // Initialize the Reed-Solomon encoder
   rs_inst = (struct rs *)(intptr_t)init_rs_int(6, 0x43, 3, 1, 51, 0);
+  // memset(callsign, 0, 13);
 }
 
 /*
@@ -188,19 +190,20 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 /*
  * wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
  *
- * Takes an arbitrary message of up to 13 allowable characters and returns
+ * Takes a callsign, grid locator, and power level and returns a WSPR symbol
+ * table for a Type 1, 2, or 3 message.
  *
- * call - Callsign (6 characters maximum).
- * loc - Maidenhead grid locator (4 characters maximum).
+ * call - Callsign (12 characters maximum).
+ * loc - Maidenhead grid locator (6 characters maximum).
  * dbm - Output power in dBm.
  * symbols - Array of channel symbols to transmit returned by the method.
  *  Ensure that you pass a uint8_t array of at least size WSPR_SYMBOL_COUNT to the method.
  *
  */
-void JTEncode::wspr_encode(const char * call, const char * loc, const uint8_t dbm, uint8_t * symbols)
+void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm, uint8_t * symbols)
 {
-  char call_[7];
-  char loc_[5];
+  char call_[13];
+  char loc_[7];
   uint8_t dbm_ = dbm;
   strcpy(call_, call);
   strcpy(loc_, loc);
@@ -533,7 +536,7 @@ uint8_t JTEncode::ft_code(char c)
 uint8_t JTEncode::wspr_code(char c)
 {
   // Validate the input then return the proper integer code.
-  // Return 255 as an error code if the char is not allowed.
+  // Change character to a space if the char is not allowed.
 
   if(isdigit(c))
 	{
@@ -549,7 +552,7 @@ uint8_t JTEncode::wspr_code(char c)
 	}
 	else
 	{
-		return 255;
+		return 36;
 	}
 }
 
@@ -575,12 +578,10 @@ void JTEncode::jt_message_prep(char * message)
 
   // Pad the message with trailing spaces
   uint8_t len = strlen(message);
-  if(len < 13)
+  
+  for(i = len; i < 13; i++)
   {
-    for(i = len; i <= 13; i++)
-    {
-      message[i] = ' ';
-    }
+    message[i] = ' ';
   }
 
   // Convert all chars to uppercase
@@ -612,53 +613,65 @@ void JTEncode::ft_message_prep(char * message)
   strcpy(message, temp_msg);
 }
 
-void JTEncode::wspr_message_prep(char * call, char * loc, uint8_t dbm)
+void JTEncode::wspr_message_prep(char * call, char * loc, int8_t dbm)
 {
   // Callsign validation and padding
   // -------------------------------
-
-	// If only the 2nd character is a digit, then pad with a space.
-	// If this happens, then the callsign will be truncated if it is
-	// longer than 5 characters.
-	if((call[1] >= '0' && call[1] <= '9') && (call[2] < '0' || call[2] > '9'))
-	{
-		memmove(call + 1, call, 5);
-		call[0] = ' ';
-	}
-
-	// Now the 3rd charcter in the callsign must be a digit
-	if(call[2] < '0' || call[2] > '9')
-	{
-    // TODO: need a better way to handle this
-		call[2] = '0';
-	}
-
-	// Ensure that the only allowed characters are digits and
-	// uppercase letters
+	
+	// Ensure that the only allowed characters are digits, uppercase letters, slash, and angle brackets
 	uint8_t i;
-	for(i = 0; i < 6; i++)
+  for(i = 0; i < 12; i++)
 	{
-		call[i] = toupper(call[i]);
-		if(!(isdigit(call[i]) || isupper(call[i])))
+		if(call[i] != '/' && call[i] != '<' && call[i] != '>')
 		{
-			call[i] = ' ';
+			call[i] = toupper(call[i]);
+			if(!(isdigit(call[i]) || isupper(call[i])))
+			{
+				call[i] = ' ';
+			}
 		}
 	}
+  call[12] = 0;
 
-  memcpy(callsign, call, 6);
+  strncpy(callsign, call, 12);
 
 	// Grid locator validation
-	for(i = 0; i < 4; i++)
+  if(strlen(loc) == 4 || strlen(loc) == 6)
 	{
-		loc[i] = toupper(loc[i]);
-		if(!(isdigit(loc[i]) || (loc[i] >= 'A' && loc[i] <= 'R')))
+		for(i = 0; i <= 1; i++)
 		{
-      memcpy(loc, "AA00", 5);
-      //loc = "AA00";
+			loc[i] = toupper(loc[i]);
+			if((loc[i] < 'A' || loc[i] > 'R'))
+			{
+				strncpy(loc, "AA00AA", 7);
+			}
+		}
+		for(i = 2; i <= 3; i++)
+		{
+			if(!(isdigit(loc[i])))
+			{
+				strncpy(loc, "AA00AA", 7);
+			}
+		}
+	}
+	else
+	{
+		strncpy(loc, "AA00AA", 7);
+	}
+
+	if(strlen(loc) == 6)
+	{
+		for(i = 4; i <= 5; i++)
+		{
+			loc[i] = toupper(loc[i]);
+			if((loc[i] < 'A' || loc[i] > 'X'))
+			{
+				strncpy(loc, "AA00AA", 7);
+			}
 		}
 	}
 
-  memcpy(locator, loc, 4);
+  strncpy(locator, loc, 7);
 
 	// Power level validation
 	// Only certain increments are allowed
@@ -666,10 +679,12 @@ void JTEncode::wspr_message_prep(char * call, char * loc, uint8_t dbm)
 	{
 		dbm = 60;
 	}
-  const uint8_t valid_dbm[19] =
-    {0, 3, 7, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40,
+  const uint8_t VALID_DBM_SIZE = 28;
+  const int8_t valid_dbm[VALID_DBM_SIZE] =
+    {-30, -27, -23, -20, -17, -13, -10, -7, -3, 
+     0, 3, 7, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40,
      43, 47, 50, 53, 57, 60};
-  for(i = 0; i < 19; i++)
+  for(i = 0; i < VALID_DBM_SIZE; i++)
   {
     if(dbm == valid_dbm[i])
     {
@@ -677,7 +692,7 @@ void JTEncode::wspr_message_prep(char * call, char * loc, uint8_t dbm)
     }
   }
   // If we got this far, we have an invalid power level, so we'll round down
-  for(i = 1; i < 19; i++)
+  for(i = 1; i < VALID_DBM_SIZE; i++)
   {
     if(dbm < valid_dbm[i] && dbm >= valid_dbm[i - 1])
     {
@@ -794,18 +809,185 @@ void JTEncode::wspr_bit_packing(uint8_t * c)
 {
   uint32_t n, m;
 
-	n = wspr_code(callsign[0]);
-	n = n * 36 + wspr_code(callsign[1]);
-	n = n * 10 + wspr_code(callsign[2]);
-	n = n * 27 + (wspr_code(callsign[3]) - 10);
-	n = n * 27 + (wspr_code(callsign[4]) - 10);
-	n = n * 27 + (wspr_code(callsign[5]) - 10);
+  // Determine if type 1, 2 or 3 message
+	char* slash_avail = strchr(callsign, (int)'/');
+	if(callsign[0] == '<')
+	{
+		// Type 3 message
+		char base_call[13];
+    memset(base_call, 0, 13);
+		uint32_t init_val = 146;
+		char* bracket_avail = strchr(callsign, (int)'>');
+		int call_len = bracket_avail - callsign - 1;
+		strncpy(base_call, callsign + 1, call_len);
+		uint32_t hash = nhash_(base_call, &call_len, &init_val);
+		hash &= 32767;
 
-	m = ((179 - 10 * (locator[0] - 'A') - (locator[2] - '0')) * 180) +
-		(10 * (locator[1] - 'A')) + (locator[3] - '0');
-	m = (m * 128) + power + 64;
+		// Convert 6 char grid square to "callsign" format for transmission
+		// by putting the first character at the end
+		char temp_loc = locator[0];
+		locator[0] = locator[1];
+		locator[1] = locator[2];
+		locator[2] = locator[3];
+		locator[3] = locator[4];
+		locator[4] = locator[5];
+		locator[5] = temp_loc;
 
-	// Callsign is 28 bits, locator/power is 22 bits.
+		n = wspr_code(locator[0]);
+		n = n * 36 + wspr_code(locator[1]);
+		n = n * 10 + wspr_code(locator[2]);
+		n = n * 27 + (wspr_code(locator[3]) - 10);
+		n = n * 27 + (wspr_code(locator[4]) - 10);
+		n = n * 27 + (wspr_code(locator[5]) - 10);
+
+		m = (hash * 128) - (power + 1) + 64;
+	}
+	else if(slash_avail == (void *)0)
+	{
+		// Type 1 message
+		pad_callsign(callsign);
+		n = wspr_code(callsign[0]);
+		n = n * 36 + wspr_code(callsign[1]);
+		n = n * 10 + wspr_code(callsign[2]);
+		n = n * 27 + (wspr_code(callsign[3]) - 10);
+		n = n * 27 + (wspr_code(callsign[4]) - 10);
+		n = n * 27 + (wspr_code(callsign[5]) - 10);
+		
+		m = ((179 - 10 * (locator[0] - 'A') - (locator[2] - '0')) * 180) + 
+			(10 * (locator[1] - 'A')) + (locator[3] - '0');
+		m = (m * 128) + power + 64;
+	}
+	else if(slash_avail)
+	{
+		// Type 2 message
+		int slash_pos = slash_avail - callsign;
+    uint8_t i;
+
+		// Determine prefix or suffix
+		if(callsign[slash_pos + 2] == ' ' || callsign[slash_pos + 2] == 0)
+		{
+			// Single character suffix
+			char base_call[7];
+      memset(base_call, 0, 7);
+			strncpy(base_call, callsign, slash_pos);
+			for(i = 0; i < 7; i++)
+			{
+				base_call[i] = toupper(base_call[i]);
+				if(!(isdigit(base_call[i]) || isupper(base_call[i])))
+				{
+					base_call[i] = ' ';
+				}
+			}
+			pad_callsign(base_call);
+
+			n = wspr_code(base_call[0]);
+			n = n * 36 + wspr_code(base_call[1]);
+			n = n * 10 + wspr_code(base_call[2]);
+			n = n * 27 + (wspr_code(base_call[3]) - 10);
+			n = n * 27 + (wspr_code(base_call[4]) - 10);
+			n = n * 27 + (wspr_code(base_call[5]) - 10);
+
+			char x = callsign[slash_pos + 1];
+			if(x >= 48 && x <= 57)
+			{
+				x -= 48;
+			}
+			else if(x >= 65 && x <= 90)
+			{
+				x -= 55;
+			}
+			else
+			{
+				x = 38;
+			}
+
+			m = 60000 - 32768 + x;
+
+			m = (m * 128) + power + 2 + 64;
+		}
+		else if(callsign[slash_pos + 3] == ' ' || callsign[slash_pos + 3] == 0)
+		{
+			// Two-digit numerical suffix
+			char base_call[7];
+      memset(base_call, 0, 7);
+			strncpy(base_call, callsign, slash_pos);
+			for(i = 0; i < 6; i++)
+			{
+				base_call[i] = toupper(base_call[i]);
+				if(!(isdigit(base_call[i]) || isupper(base_call[i])))
+				{
+					base_call[i] = ' ';
+				}
+			}
+			pad_callsign(base_call);
+
+			n = wspr_code(base_call[0]);
+			n = n * 36 + wspr_code(base_call[1]);
+			n = n * 10 + wspr_code(base_call[2]);
+			n = n * 27 + (wspr_code(base_call[3]) - 10);
+			n = n * 27 + (wspr_code(base_call[4]) - 10);
+			n = n * 27 + (wspr_code(base_call[5]) - 10);
+
+			// TODO: needs validation of digit
+			m = 10 * (callsign[slash_pos + 1] - 48) + callsign[slash_pos + 2] - 48;
+			m = 60000 + 26 + m;
+			m = (m * 128) + power + 2 + 64;
+		}
+		else
+		{
+			// Prefix
+			char prefix[4];
+			char base_call[7];
+      memset(prefix, 0, 4);
+      memset(base_call, 0, 7);
+			strncpy(prefix, callsign, slash_pos);
+			strncpy(base_call, callsign + slash_pos + 1, 7);
+
+			if(prefix[2] == ' ' || prefix[2] == 0)
+			{
+				// Right align prefix
+				prefix[3] = 0;
+				prefix[2] = prefix[1];
+				prefix[1] = prefix[0];
+				prefix[0] = ' ';
+			}
+
+			for(uint8_t i = 0; i < 6; i++)
+			{
+				base_call[i] = toupper(base_call[i]);
+				if(!(isdigit(base_call[i]) || isupper(base_call[i])))
+				{
+					base_call[i] = ' ';
+				}
+			}
+			pad_callsign(base_call);
+
+			n = wspr_code(base_call[0]);
+			n = n * 36 + wspr_code(base_call[1]);
+			n = n * 10 + wspr_code(base_call[2]);
+			n = n * 27 + (wspr_code(base_call[3]) - 10);
+			n = n * 27 + (wspr_code(base_call[4]) - 10);
+			n = n * 27 + (wspr_code(base_call[5]) - 10);
+
+			m = 0;
+			for(uint8_t i = 0; i < 3; ++i)
+			{
+				m = 37 * m + wspr_code(prefix[i]);
+			}
+
+			if(m >= 32768)
+			{
+				m -= 32768;
+				m = (m * 128) + power + 2 + 64;
+			}
+			else
+			{
+				m = (m * 128) + power + 1 + 64;
+			}
+		}
+	}
+
+  // Callsign is 28 bits, locator/power is 22 bits.
 	// A little less work to start with the least-significant bits
 	c[3] = (uint8_t)((n & 0x0f) << 4);
 	n = n >> 4;
@@ -1386,4 +1568,27 @@ uint8_t JTEncode::crc8(const char * text)
   }
 
   return crc;
+}
+
+void JTEncode::pad_callsign(char * call)
+{
+	// If only the 2nd character is a digit, then pad with a space.
+	// If this happens, then the callsign will be truncated if it is
+	// longer than 6 characters.
+	if(isdigit(call[1]) && isupper(call[2]))
+	{
+		// memmove(call + 1, call, 6);
+    call[5] = call[4];
+    call[4] = call[3];
+    call[3] = call[2];
+    call[2] = call[1];
+    call[1] = call[0];
+		call[0] = ' ';
+	}
+
+	// Now the 3rd charcter in the callsign must be a digit
+	// if(call[2] < '0' || call[2] > '9')
+	// {
+	// 	// return 1;
+	// }
 }
