@@ -445,6 +445,60 @@ void JTEncode::ft8_encode(const char * msg, uint8_t * symbols)
   ft8_merge_sync_vector(s, symbols);
 }
 
+/*
+ * latlon_to_grid(float lat, float lon, char* ret_grid)
+ *
+ * Takes a station latitude and longitude provided in decimal degrees format and
+ * returns a string with the 6-digit Maidenhead grid designator.
+ *
+ * lat - Latitude in decimal degrees format.
+ * lon - Longitude in decimal degrees format.
+ * ret_grid - Derived Maidenhead grid square. A pointer to a character array of
+ *   at least 7 bytes must be provided here for the function return value.
+ *
+ */
+void JTEncode::latlon_to_grid(float lat, float lon, char* ret_grid)
+{
+  char grid[7];
+  memset(grid, 0, 7);
+
+  // Bounds checks
+  if(lat < -90.0) {
+    lat = -90.0;
+  }
+  if(lat > 90.0) {
+    lat = 90.0;
+  }
+  if(lon < -180.0) {
+    lon = -180.0;
+  }
+  if(lon > 180.0) {
+    lon = 180.0;
+  }
+
+  // Normalize lat and lon
+  lon += 180.0;
+  lat += 90.0;
+
+  // Derive first coordinate pair
+  grid[0] = (char)((uint8_t)(lon / 20) + 'A');
+  grid[1] = (char)((uint8_t)(lat / 10) + 'A');
+
+  // Derive second coordinate pair
+  lon = lon - ((uint8_t)(lon / 20) * 20);
+  lat = lat - ((uint8_t)(lat / 10) * 10);
+  grid[2] = (char)((uint8_t)(lon / 2) + '0');
+  grid[3] = (char)((uint8_t)(lat) + '0');
+
+  // Derive third coordinate pair
+  lon = lon - ((uint8_t)(lon / 2) * 2);
+  lat = lat - ((uint8_t)(lat));
+  grid[4] = (char)((uint8_t)(lon * 12) + 'a');
+  grid[5] = (char)((uint8_t)(lat * 24) + 'a');
+
+  strncpy(ret_grid, grid, 6);
+}
+
 /* Private Class Members */
 
 uint8_t JTEncode::jt_code(char c)

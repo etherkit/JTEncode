@@ -261,6 +261,22 @@ Public Methods
 */
 ```
 
+### latlon_to_grid()
+```
+/*
+ * latlon_to_grid(float lat, float lon, char* ret_grid)
+ *
+ * Takes a station latitude and longitude provided in decimal degrees format and
+ * returns a string with the 6-digit Maidenhead grid designator.
+ *
+ * lat - Latitude in decimal degrees format.
+ * lon - Longitude in decimal degrees format.
+ * ret_grid - Derived Maidenhead grid square. A pointer to a character array of
+ *   at least 7 bytes must be provided here for the function return value.
+ *
+ */
+ ```
+
 Tokens
 ------
 Here are the defines, structs, and enumerations you will find handy to use with the library.
@@ -277,6 +293,10 @@ Also, a big thank you to Murray Greenman, ZL1BPU for working allowing me to pick
 
 Changelog
 ---------
+* v1.3.1
+
+    * Added latitude/longitude to Maidenhead grid convenience function
+
 * v1.3.0
 
     * WSPR Type 2 and Type 3 message capability added

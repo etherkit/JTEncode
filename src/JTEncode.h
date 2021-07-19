@@ -225,6 +225,7 @@ public:
   void fsq_encode(const char *, const char *, uint8_t *);
   void fsq_dir_encode(const char *, const char *, const char, const char *, uint8_t *);
   void ft8_encode(const char *, uint8_t *);
+  void latlon_to_grid(float, float, char*);
 private:
   uint8_t jt_code(char);
   uint8_t ft_code(char);
