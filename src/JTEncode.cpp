@@ -462,6 +462,20 @@ void JTEncode::latlon_to_grid(float lat, float lon, char* ret_grid)
   char grid[7];
   memset(grid, 0, 7);
 
+  // Bounds checks
+  if(lat < -90.0) {
+    lat = -90.0;
+  }
+  if(lat > 90.0) {
+    lat = 90.0;
+  }
+  if(lon < -180.0) {
+    lon = -180.0;
+  }
+  if(lon > 180.0) {
+    lon = 180.0;
+  }
+
   // Normalize lat and lon
   lon += 180.0;
   lat += 90.0;
