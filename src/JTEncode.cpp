@@ -210,6 +210,8 @@ void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
+  //:w
+
   wspr_message_prep(call_, loc_, dbm_);
 
   // Bit packing
@@ -1075,9 +1077,7 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	uint8_t n3 = 0;
 	uint8_t qa[10];
 	uint8_t qb[10];
-	char c18[19];
 	bool telem = false;
-	char temp_msg[19];
 	memset(qa, 0, 10);
 	memset(qb, 0, 10);
 
@@ -1088,10 +1088,13 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	// Has to be hex digits, can be no more than 18
 	for(i = 0; i < 19; ++i)
 	{
-		if(message[i] == 0 || message[i] == ' ')
+		if(message[i] == 0)
 		{
 			break;
 		}
+		// bugfix: "73     DL9SAU" was interpreted as hex message. Check further for non-hex-character
+		else if (message[i] == ' ')
+			continue;
 		else if(hex2int(message[i]) == -1)
 		{
 			telem = false;
@@ -1099,7 +1102,6 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 		}
 		else
 		{
-			c18[i] = message[i];
 			telem = true;
 		}
 	}
@@ -1107,31 +1109,20 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	// If telemetry
 	if(telem)
 	{
-		// Get the first 18 hex digits
-		for(i = 0; i < strlen(message); ++i)
-		{
-			i0 = i;
-			if(message[i] == ' ')
-			{
-				--i0;
-				break;
-			}
+		char *p;
+
+		// skip leading blanks
+		for (p = message; *p == ' '; p++) ;
+		{ char buf[19];
+		  char *q = buf;
+		  // Copy until end or first ' ' ("AA BB" is invalid),
+		  // and convert all chars to uppercase.
+		  while (*p && *p != ' ')
+		    *q++ = toupper(*p++);
+		  *q = 0;
+		  // right-align
+		  sprintf(message, "%18.18s", buf);
 		}
-
-		memset(c18, 0, 19);
-		memmove(c18, message, i0 + 1);
-		snprintf(temp_msg, 19, "%*s", 18, c18);
-
-		// Convert all chars to uppercase
-	    for(i = 0; i < strlen(temp_msg); i++)
-	    {
-	      if(islower(temp_msg[i]))
-	      {
-	        temp_msg[i] = toupper(temp_msg[i]);
-	      }
-	    }
-		strcpy(message, temp_msg);
-
 
 		uint8_t temp_int;
 		temp_int = message[0] == ' ' ? 0 : hex2int(message[0]);
