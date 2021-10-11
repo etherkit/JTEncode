@@ -67,7 +67,7 @@ void JTEncode::jt65_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -111,7 +111,7 @@ void JTEncode::jt9_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -160,7 +160,7 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -205,11 +205,13 @@ void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm
   char call_[13];
   char loc_[7];
   uint8_t dbm_ = dbm;
-  strcpy(call_, call);
-  strcpy(loc_, loc);
+  snprintf(call_, 13, "%.12s", call);
+  snprintf(loc_, 7, "%.6s", loc);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
+  //:w
+
   wspr_message_prep(call_, loc_, dbm_);
 
   // Bit packing
@@ -427,7 +429,7 @@ void JTEncode::ft8_encode(const char * msg, uint8_t * symbols)
 
   char message[19];
   memset(message, 0, 19);
-  strcpy(message, msg);
+  strncpy(message, msg, 18);
 
   // Bit packing
   // -----------
@@ -496,7 +498,7 @@ void JTEncode::latlon_to_grid(float lat, float lon, char* ret_grid)
   grid[4] = (char)((uint8_t)(lon * 12) + 'a');
   grid[5] = (char)((uint8_t)(lat * 24) + 'a');
 
-  strncpy(ret_grid, grid, 6);
+  strncpy(ret_grid, grid, 7);
 }
 
 /* Private Class Members */
@@ -687,7 +689,7 @@ void JTEncode::wspr_message_prep(char * call, char * loc, int8_t dbm)
 	}
   call[12] = 0;
 
-  strncpy(callsign, call, 12);
+  strncpy(callsign, call, 13);
 
 	// Grid locator validation
   if(strlen(loc) == 4 || strlen(loc) == 6)
@@ -1075,9 +1077,7 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	uint8_t n3 = 0;
 	uint8_t qa[10];
 	uint8_t qb[10];
-	char c18[19];
 	bool telem = false;
-	char temp_msg[19];
 	memset(qa, 0, 10);
 	memset(qb, 0, 10);
 
@@ -1088,10 +1088,13 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	// Has to be hex digits, can be no more than 18
 	for(i = 0; i < 19; ++i)
 	{
-		if(message[i] == 0 || message[i] == ' ')
+		if(message[i] == 0)
 		{
 			break;
 		}
+		// bugfix: "73     DL9SAU" was interpreted as hex message. Check further for non-hex-character
+		else if (message[i] == ' ')
+			continue;
 		else if(hex2int(message[i]) == -1)
 		{
 			telem = false;
@@ -1099,7 +1102,6 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 		}
 		else
 		{
-			c18[i] = message[i];
 			telem = true;
 		}
 	}
@@ -1107,31 +1109,20 @@ void JTEncode::ft8_bit_packing(char* message, uint8_t* codeword)
 	// If telemetry
 	if(telem)
 	{
-		// Get the first 18 hex digits
-		for(i = 0; i < strlen(message); ++i)
-		{
-			i0 = i;
-			if(message[i] == ' ')
-			{
-				--i0;
-				break;
-			}
+		char *p;
+
+		// skip leading blanks
+		for (p = message; *p == ' '; p++) ;
+		{ char buf[19];
+		  char *q = buf;
+		  // Copy until end or first ' ' ("AA BB" is invalid),
+		  // and convert all chars to uppercase.
+		  while (*p && *p != ' ')
+		    *q++ = toupper(*p++);
+		  *q = 0;
+		  // right-align
+		  sprintf(message, "%18.18s", buf);
 		}
-
-		memset(c18, 0, 19);
-		memmove(c18, message, i0 + 1);
-		snprintf(temp_msg, 19, "%*s", 18, c18);
-
-		// Convert all chars to uppercase
-	    for(i = 0; i < strlen(temp_msg); i++)
-	    {
-	      if(islower(temp_msg[i]))
-	      {
-	        temp_msg[i] = toupper(temp_msg[i]);
-	      }
-	    }
-		strcpy(message, temp_msg);
-
 
 		uint8_t temp_int;
 		temp_int = message[0] == ' ' ? 0 : hex2int(message[0]);
