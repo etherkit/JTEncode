@@ -258,7 +258,7 @@ private:
   uint8_t crc8(const char *);
   void pad_callsign(char *);
   void * rs_inst;
-  char callsign[12];
+  char callsign[13];
   char locator[7];
   int8_t power;
 };

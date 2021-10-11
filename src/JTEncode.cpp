@@ -67,7 +67,7 @@ void JTEncode::jt65_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -111,7 +111,7 @@ void JTEncode::jt9_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -160,7 +160,7 @@ void JTEncode::jt4_encode(const char * msg, uint8_t * symbols)
 {
   char message[14];
   memset(message, 0, 14);
-  strcpy(message, msg);
+  strncpy(message, msg, 13);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -205,8 +205,8 @@ void JTEncode::wspr_encode(const char * call, const char * loc, const int8_t dbm
   char call_[13];
   char loc_[7];
   uint8_t dbm_ = dbm;
-  strcpy(call_, call);
-  strcpy(loc_, loc);
+  snprintf(call_, 13, "%.12s", call);
+  snprintf(loc_, 7, "%.6s", loc);
 
   // Ensure that the message text conforms to standards
   // --------------------------------------------------
@@ -429,7 +429,7 @@ void JTEncode::ft8_encode(const char * msg, uint8_t * symbols)
 
   char message[19];
   memset(message, 0, 19);
-  strcpy(message, msg);
+  strncpy(message, msg, 18);
 
   // Bit packing
   // -----------
@@ -498,7 +498,7 @@ void JTEncode::latlon_to_grid(float lat, float lon, char* ret_grid)
   grid[4] = (char)((uint8_t)(lon * 12) + 'a');
   grid[5] = (char)((uint8_t)(lat * 24) + 'a');
 
-  strncpy(ret_grid, grid, 6);
+  strncpy(ret_grid, grid, 7);
 }
 
 /* Private Class Members */
@@ -689,7 +689,7 @@ void JTEncode::wspr_message_prep(char * call, char * loc, int8_t dbm)
 	}
   call[12] = 0;
 
-  strncpy(callsign, call, 12);
+  strncpy(callsign, call, 13);
 
 	// Grid locator validation
   if(strlen(loc) == 4 || strlen(loc) == 6)
